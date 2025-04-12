@@ -8,7 +8,7 @@ import yaml
 from supersearch.index import (
     SchemaTypeError,
     SchemaValidationError,
-    yaml_validator,
+    index_validator,
 )
 
 
@@ -18,7 +18,7 @@ def test_yaml_validator_valid() -> None:
         yaml_data = yaml.safe_load(file)
 
     try:
-        yaml_validator(yaml_data)
+        index_validator(yaml_data)
     except SchemaTypeError as e:
         pytest.fail(f"yaml_validator raised a SchemaTypeError: {e}")
     except SchemaValidationError as e:
@@ -35,7 +35,7 @@ def test_yaml_validator_invalid_type() -> None:
     }
 
     with pytest.raises(SchemaTypeError) as excinfo:
-        yaml_validator(invalid_yaml)
+        index_validator(invalid_yaml)
 
     if "Index 'unknown_type' schema with type name 'unknown'" not in str(excinfo.value):
         msg = (
@@ -60,7 +60,7 @@ def test_yaml_validator_invalid_schema() -> None:
     }
 
     with pytest.raises(SchemaValidationError) as excinfo:
-        yaml_validator(invalid_yaml)
+        index_validator(invalid_yaml)
     if "validation errors" not in str(excinfo.value):
         msg = "Expected 'validation errors' in exception message."
         raise AssertionError(msg)
