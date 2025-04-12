@@ -1,9 +1,9 @@
 """Number Index Schema."""
 
-
 from pydantic import BaseModel
 
-from index.schema.base import BaseIndexSchema
+from supersearch.index.schema.base import BaseIndexSchema
+from supersearch.index.schema.hub import index_schema
 
 
 class NumberRange(BaseModel):
@@ -12,6 +12,8 @@ class NumberRange(BaseModel):
     min: float
     max: float
 
+
+@index_schema("number")
 class NumberIndexSchema(BaseIndexSchema):
     """Schema for number index."""
 

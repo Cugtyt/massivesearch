@@ -4,7 +4,7 @@ from abc import ABC
 
 from pydantic import BaseModel
 
-from search_engine.base_engine import BaseSearchEngine
+from supersearch.search_engine.base_engine import BaseSearchEngine
 
 
 class BaseIndexSchema(BaseModel, ABC):

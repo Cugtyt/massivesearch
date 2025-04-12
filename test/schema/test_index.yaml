@@ -5,7 +5,7 @@ description:
     - "This is clothes for all seasons."
     - "This is a high-performance laptop."
   search_engine:
-    type: "text_search"
+    name: "text"
     config:
       matching_strategy: "contains"
 target_audience:
@@ -16,9 +16,17 @@ target_audience:
     - "Adults"
     - "This is for everyone."
   search_engine:
-    type: "text_search"
+    name: "text"
     config:
       matching_strategy: "exact"
+is_available:
+  type: boolean
+  description: Indicates if the product is available for purchase.
+  search_engine:
+    name: "boolean"
+    config:
+      true_value: "available"
+      false_value: "not_available"
 price:
   type: number
   description: The price of the product.
@@ -30,7 +38,7 @@ price:
     - 999.99
     - 0.00
   search_engine:
-    type: "range_search"
+    name: "number"
 date:
   type: date
   description: The date when the product was added.
@@ -38,15 +46,14 @@ date:
     - "2023-01-01"
     - "2023-10-15"
   search_engine:
-    type: "date_search"
-    default_arguments:
-      start_date: "2023-01-01"
-      end_date: "2023-12-31"
+    name: "date"
+    config:
+      format: "YYYY-MM-DD"
 image:
   type: vector
   description: A vector representation of the product image.
   search_engine:
-    type: "vector_search"
-    default_arguments:
+    name: "vector"
+    config:
       top_k: 5
       distance_metric: "cosine"

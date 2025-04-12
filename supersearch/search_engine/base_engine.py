@@ -9,5 +9,4 @@ class BaseSearchEngineConfig(BaseModel):
 class BaseSearchEngine(BaseModel):
     """Base class for search engines."""
 
-    name: str
-    config: BaseSearchEngineConfig
+    config: BaseSearchEngineConfig | None = None
