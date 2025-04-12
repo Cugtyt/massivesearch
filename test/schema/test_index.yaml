@@ -1,0 +1,52 @@
+description:
+  type: text
+  description: A detailed description of the product.
+  examples:
+    - "This is clothes for all seasons."
+    - "This is a high-performance laptop."
+  search_engine:
+    type: "text_search"
+    config:
+      matching_strategy: "contains"
+target_audience:
+  type: text
+  description: The target audience for the product.
+  examples:
+    - "Teens"
+    - "Adults"
+    - "This is for everyone."
+  search_engine:
+    type: "text_search"
+    config:
+      matching_strategy: "exact"
+price:
+  type: number
+  description: The price of the product.
+  range:
+    min: 0
+    max: 10000
+  examples:
+    - 19.99
+    - 999.99
+    - 0.00
+  search_engine:
+    type: "range_search"
+date:
+  type: date
+  description: The date when the product was added.
+  examples:
+    - "2023-01-01"
+    - "2023-10-15"
+  search_engine:
+    type: "date_search"
+    default_arguments:
+      start_date: "2023-01-01"
+      end_date: "2023-12-31"
+image:
+  type: vector
+  description: A vector representation of the product image.
+  search_engine:
+    type: "vector_search"
+    default_arguments:
+      top_k: 5
+      distance_metric: "cosine"
