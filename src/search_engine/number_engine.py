@@ -1,14 +1,13 @@
 """Number search engine."""
 
-from pydantic import BaseModel
-
-from search_engine.base_engine import BaseSearchEngineConfig
+from search_engine.base_engine import BaseSearchEngine, BaseSearchEngineConfig
 
 
 class NumberSearchEngineConfig(BaseSearchEngineConfig):
-    """Default arguments for number search engines."""
+    """Config for number search engine."""
 
-class NumberSearchEngine(BaseModel):
+
+class NumberSearchEngine(BaseSearchEngine):
     """Number search engine."""
 
     config: NumberSearchEngineConfig

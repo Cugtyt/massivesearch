@@ -1,15 +1,13 @@
 """Text search engine."""
 
-from pydantic import BaseModel
-
-from search_engine.base_engine import BaseSearchEngineConfig
+from search_engine.base_engine import BaseSearchEngine, BaseSearchEngineConfig
 
 
 class TextSearchEngineConfig(BaseSearchEngineConfig):
-    """Default arguments for text search engines."""
+    """Config for text search engines."""
 
 
-class TextSearchEngine(BaseModel):
+class TextSearchEngine(BaseSearchEngine):
     """Text search engine."""
 
-    default_arguments: TextSearchEngineConfig
+    config: TextSearchEngineConfig
