@@ -12,7 +12,7 @@ from supersearch.search_engine import registered_search_engines
 from supersearch.search_engine.base_engine import BaseSearchEngine
 from supersearch.spec.spec_validator import spec_validator
 
-STSTEM_PROMPT_TEMPLATE = """Fill the serch engine arguments based on the user's intent
+STSTEM_PROMPT_TEMPLATE = """Fill the search engine arguments based on the user's intent
 and current index information.
 
 {context}
