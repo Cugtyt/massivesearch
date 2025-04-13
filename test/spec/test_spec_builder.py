@@ -7,8 +7,8 @@ import pytest
 import yaml
 
 from supersearch.index import NumberIndex, TextIndex
-from supersearch.index.base import BaseIndex  # Add this import
-from supersearch.search_engine.base_engine import BaseSearchEngine  # Add this import
+from supersearch.index.base import BaseIndex
+from supersearch.search_engine.base_engine import BaseSearchEngine
 from supersearch.search_engine.text_engine import (
     TextSearchEngine,
     TextSearchEngineArguments,
@@ -62,14 +62,22 @@ def test_spec_builder_init_from_file() -> None:
         raise ValueError(msg)
 
     if len(builder_from_file.index_spec) != len(valid_spec):
-        msg = f"Expected index_spec length ({len(builder_from_file.index_spec)}) to match valid_spec length ({len(valid_spec)})."
+        msg = (
+            f"Expected index_spec length "
+            f"({len(builder_from_file.index_spec)}) to match "
+            f"valid_spec length ({len(valid_spec)})."
+        )
         raise ValueError(msg)
 
     if (
         builder_from_file.index_spec.keys()
         != builder_from_file.search_engine_spec.keys()
     ):
-        msg = f"index_spec keys ({builder_from_file.index_spec.keys()}) and search_engine_spec keys ({builder_from_file.search_engine_spec.keys()}) should match."
+        msg = (
+            f"index_spec keys ({builder_from_file.index_spec.keys()}) and "
+            f"search_engine_spec keys ({builder_from_file.search_engine_spec.keys()}) "
+            "should match."
+        )
         raise ValueError(msg)
 
     for key in valid_spec:
@@ -83,7 +91,10 @@ def test_spec_builder_init_from_file() -> None:
             msg = f"Value for key '{key}' in index_spec is not a BaseIndex instance."
             raise TypeError(msg)
         if not isinstance(builder_from_file.search_engine_spec[key], BaseSearchEngine):
-            msg = f"Value for key '{key}' in search_engine_spec is not a BaseSearchEngine instance."
+            msg = (
+                f"Value for key '{key}' in search_engine_spec is not a "
+                f"BaseSearchEngine instance."
+            )
             raise TypeError(msg)
 
 

@@ -34,7 +34,7 @@ def test_spec_validator_invalid_index_type() -> None:
         },
     }
 
-    with pytest.raises(SpecIndexTypeError) as excinfo:
+    with pytest.raises(SpecIndexTypeError):
         spec_validator(invalid_spec)
 
     invalid_spec = {
