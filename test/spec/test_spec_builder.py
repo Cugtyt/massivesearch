@@ -6,7 +6,9 @@ from unittest.mock import MagicMock
 import pytest
 import yaml
 
-from supersearch.index import NumberIndexSchema, TextIndexSchema
+from supersearch.index import NumberIndex, TextIndex
+from supersearch.index.base import BaseIndex  # Add this import
+from supersearch.search_engine.base_engine import BaseSearchEngine  # Add this import
 from supersearch.search_engine.text_engine import (
     TextSearchEngine,
     TextSearchEngineArguments,
@@ -15,56 +17,80 @@ from supersearch.search_engine.text_engine import (
 from supersearch.spec.builder import SpecBuilder
 
 
-def test_spec_builder_init() -> None:
-    """Test SpecBuilder initialization."""
+def test_spec_builder_default_init() -> None:
+    """Test SpecBuilder default initialization."""
     builder = SpecBuilder()
-    if builder.index_spec != {} or builder.search_engine_spec != {}:
-        msg = "Expected empty spec dictionaries, but got non-empty."
+    if builder.index_spec != {}:
+        msg = "Expected empty index_spec on default init."
+        raise TypeError(msg)
+    if builder.search_engine_spec != {}:
+        msg = "Expected empty search_engine_spec on default init."
         raise ValueError(msg)
 
+
+def test_spec_builder_init_with_spec() -> None:
+    """Test SpecBuilder initialization with provided specs."""
+    mock_index = MagicMock(spec=BaseIndex)
+    mock_engine = MagicMock(spec=BaseSearchEngine)
     builder_with_spec = SpecBuilder(
-        index_spec={"key": "value"},
-        search_engine_spec={"key": MagicMock()},
+        index_spec={"key": mock_index},
+        search_engine_spec={"key": mock_engine},
     )
-    if builder_with_spec.index_spec != {"key": "value"}:
-        msg = "Expected index_spec to be {'key': 'value'}, but got different value."
+    if builder_with_spec.index_spec != {"key": mock_index}:
+        msg = "index_spec not initialized correctly."
         raise ValueError(msg)
-    if "key" not in builder_with_spec.search_engine_spec:
-        msg = "Expected search_engine_spec to contain 'key', but it does not."
+    if builder_with_spec.search_engine_spec != {"key": mock_engine}:
+        msg = "search_engine_spec not initialized correctly."
         raise ValueError(msg)
 
-    with Path("./test/spec/test_spec.yaml").open() as file:
+
+def test_spec_builder_init_from_file() -> None:
+    """Test SpecBuilder initialization via include method from a YAML file."""
+    spec_file_path = Path("./test/spec/test_spec.yaml")
+
+    with spec_file_path.open() as file:
         valid_spec = yaml.safe_load(file)
+
     builder_from_file = SpecBuilder()
     builder_from_file.include(valid_spec)
+
     if not builder_from_file.index_spec:
-        msg = "Expected index_spec to be populated from file, but it is empty."
+        msg = "index_spec should be populated from file."
         raise ValueError(msg)
     if not builder_from_file.search_engine_spec:
-        msg = "Expected search_engine_spec to be populated from file, but it is empty."
+        msg = "search_engine_spec should be populated from file."
         raise ValueError(msg)
+
     if len(builder_from_file.index_spec) != len(valid_spec):
-        msg = (
-            "Expected index_spec length to match valid_spec length, "
-            f"but got {len(builder_from_file.index_spec)}."
-        )
+        msg = f"Expected index_spec length ({len(builder_from_file.index_spec)}) to match valid_spec length ({len(valid_spec)})."
         raise ValueError(msg)
+
     if (
         builder_from_file.index_spec.keys()
         != builder_from_file.search_engine_spec.keys()
     ):
-        msg = (
-            "Expected index_spec and search_engine_spec keys to match, "
-            f"but got {builder_from_file.index_spec.keys()} and "
-            f"{builder_from_file.search_engine_spec.keys()}."
-        )
+        msg = f"index_spec keys ({builder_from_file.index_spec.keys()}) and search_engine_spec keys ({builder_from_file.search_engine_spec.keys()}) should match."
         raise ValueError(msg)
+
+    for key in valid_spec:
+        if key not in builder_from_file.index_spec:
+            msg = f"Key '{key}' from yaml missing in index_spec."
+            raise ValueError(msg)
+        if key not in builder_from_file.search_engine_spec:
+            msg = f"Key '{key}' from yaml missing in search_engine_spec."
+            raise ValueError(msg)
+        if not isinstance(builder_from_file.index_spec[key], BaseIndex):
+            msg = f"Value for key '{key}' in index_spec is not a BaseIndex instance."
+            raise TypeError(msg)
+        if not isinstance(builder_from_file.search_engine_spec[key], BaseSearchEngine):
+            msg = f"Value for key '{key}' in search_engine_spec is not a BaseSearchEngine instance."
+            raise TypeError(msg)
 
 
 def test_spec_builder_add() -> None:
     """Test adding schemas to SpecBuilder."""
     builder = SpecBuilder()
-    text_index = TextIndexSchema(
+    text_index = TextIndex(
         description="A text schema.",
         examples=["example1", "example2"],
     )
@@ -78,7 +104,7 @@ def test_spec_builder_add() -> None:
             "The 'text_schema' in builder.index_spec does not match "
             "the expected schema."
         )
-        raise ValueError(msg)
+        raise TypeError(msg)
     if builder.search_engine_spec["text_schema"] != mock_search_engine:
         msg = (
             "The 'text_schema' in builder.search_engine_spec does not match "
@@ -90,7 +116,7 @@ def test_spec_builder_add() -> None:
 def test_spec_builder_build_prompt() -> None:
     """Test building a prompt with SpecBuilder."""
     builder = SpecBuilder()
-    text_index = TextIndexSchema(
+    text_index = TextIndex(
         description="A text schema.",
         examples=["example1", "example2"],
     )
@@ -126,14 +152,13 @@ def test_spec_builder_build_prompt() -> None:
 def test_spec_builder_build_format() -> None:
     """Test building a format with SpecBuilder."""
     builder = SpecBuilder()
-    number_index = NumberIndexSchema(
+    number_index = NumberIndex(
         description="A number schema.",
         range={"min": 0, "max": 100},
         examples=[10, 20, 30],
     )
     search_engine = TextSearchEngine(
         config=TextSearchEngineConfig(),
-        arguments=TextSearchEngineArguments(keywords=["example"]),
     )
     builder.add("number_schema", number_index, search_engine)
     model = builder.build_format()
@@ -148,7 +173,7 @@ def test_spec_builder_build_format() -> None:
 def test_spec_builder_query() -> None:
     """Test querying with SpecBuilder."""
     builder = SpecBuilder()
-    text_index = TextIndexSchema(
+    text_index = TextIndex(
         description="A text schema.",
         examples=["example1", "example2"],
     )
@@ -177,7 +202,7 @@ def test_spec_builder_empty_spec_error() -> None:
 def test_spec_builder_empty_query_error() -> None:
     """Test error when query string is empty."""
     builder = SpecBuilder()
-    text_index = TextIndexSchema(
+    text_index = TextIndex(
         description="A text schema.",
         examples=["example1", "example2"],
     )

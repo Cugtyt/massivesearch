@@ -66,7 +66,7 @@ class DateSearchResult(BaseSearchResult):
     """Result of date search."""
 
 
-@search_engine("date")
+@search_engine("date_search")
 class DateSearchEngine(BaseSearchEngine):
     """date search engine."""
 

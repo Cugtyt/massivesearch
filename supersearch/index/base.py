@@ -5,7 +5,7 @@ from abc import ABC
 from pydantic import BaseModel
 
 
-class BaseIndexSchema(BaseModel, ABC):
+class BaseIndex(BaseModel, ABC):
     """Base class for index schemas."""
 
     description: str

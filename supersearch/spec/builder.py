@@ -5,10 +5,11 @@ from typing import Self
 
 from pydantic import BaseModel, create_model
 
-from supersearch.index import registered_schemas
-from supersearch.index.schema.base import BaseIndexSchema
+from supersearch.index import registered_indexs
+from supersearch.index.base import BaseIndex
 from supersearch.search_engine import registered_search_engines
 from supersearch.search_engine.base_engine import BaseSearchEngine
+from supersearch.spec.spec_validator import spec_validator
 
 STSTEM_PROMPT_TEMPLATE = """Fill the serch engine arguments based on the user's intent
 and current index information.
@@ -22,11 +23,11 @@ class SpecBuilder:
 
     def __init__(
         self,
-        index_spec: dict[str, BaseIndexSchema] | None = None,
+        index_spec: dict[str, BaseIndex] | None = None,
         search_engine_spec: dict[str, BaseSearchEngine] | None = None,
     ) -> None:
         """Initialize the SpecBuilder with an empty specification."""
-        self.index_spec: dict[str, BaseIndexSchema] = index_spec or {}
+        self.index_spec: dict[str, BaseIndex] = index_spec or {}
         self.search_engine_spec: dict[str, BaseSearchEngine] = search_engine_spec or {}
         if self.index_spec.keys() != self.search_engine_spec.keys():
             msg = "Index spec and search engine spec keys do not match."
@@ -38,30 +39,27 @@ class SpecBuilder:
             msg = "No schemas available to include."
             raise ValueError(msg)
 
+        spec_validator(spec)
+
         for name, schema in spec.items():
-            index_type = schema.get("type")
-            search_engine = schema.get("search_engine", {})
+            index_schema = schema.get("index")
+            index_type = index_schema.get("type")
+            search_engine = schema.get("search_engine")
             search_engine_type = search_engine.get("type")
             self.add(
                 name,
-                registered_schemas[index_type](**schema),
-                registered_search_engines[search_engine_type](
-                    config=registered_search_engines[search_engine_type]
-                    .model_fields["config"]
-                    .annotation(
-                        **search_engine.get("config", {}),
-                    ),
-                ),
+                registered_indexs[index_type](**index_schema),
+                registered_search_engines[search_engine_type](**search_engine),
             )
 
     def add(
         self,
         name: str,
-        index_schema: BaseIndexSchema,
+        index: BaseIndex,
         search_engine: BaseSearchEngine,
     ) -> None:
         """Add a schema to the spec."""
-        self.index_spec[name] = index_schema
+        self.index_spec[name] = index
         self.search_engine_spec[name] = search_engine
 
     def build_prompt(self, query: str) -> list[dict[str, str]]:

@@ -27,7 +27,7 @@ class VectorSearchResult(BaseSearchResult):
     """Result of vector search."""
 
 
-@search_engine("vector")
+@search_engine("vector_search")
 class VectorSearchEngine(BaseSearchEngine):
     """Vector search engine."""
 

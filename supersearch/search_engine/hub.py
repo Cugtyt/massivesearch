@@ -20,17 +20,17 @@ class SearchEngineRegisterError(Exception):
         )
 
 
-def search_engine(type_name: str) -> callable:
+def search_engine(name: str) -> type[BaseSearchEngine]:
     """Register a search engine with a given key name."""
 
     def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
-        _validate_registration(type_name, cls)
+        _validate_registration(name, cls)
         _validate_config(cls)
         _validate_search_method(cls)
 
     def decorator(cls: type[BaseSearchEngine]) -> type:
         validate_search_engine(cls)
-        registered_search_engines[type_name] = cls
+        registered_search_engines[name] = cls
         return cls
 
     return decorator

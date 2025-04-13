@@ -55,7 +55,7 @@ class NumberSearchResult(BaseSearchResult):
     """Result of number search."""
 
 
-@search_engine("number")
+@search_engine("number_search")
 class NumberSearchEngine(BaseSearchEngine):
     """Number search engine."""
 

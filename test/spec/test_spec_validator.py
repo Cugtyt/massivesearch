@@ -27,68 +27,72 @@ def test_spec_validator_valid() -> None:
 def test_spec_validator_invalid_index_type() -> None:
     """Test spec_validator with an invalid index type."""
     invalid_spec = {
-        "unknown_index": {
-            "type": "unknown",
-            "description": "An unknown index type.",
+        "unknown": {
+            "search_engine": {
+                "type": "text_search",
+            },
         },
     }
 
     with pytest.raises(SpecIndexTypeError) as excinfo:
         spec_validator(invalid_spec)
 
-    if "Index 'unknown_index' schema with type name 'unknown'" not in str(
-        excinfo.value,
+    invalid_spec = {
+        "unknow": {
+            "index": {
+                "type": "unknown",
+                "description": "An unknown index type.",
+            },
+            "search_engine": {
+                "type": "text_search",
+            },
+        },
+    }
+    with pytest.raises(
+        SpecIndexTypeError,
+        match="Spec 'unknow': Index type 'unknown' is unknown.",
     ):
-        msg = "Expected error message not found in exception."
-        raise AssertionError(msg)
+        spec_validator(invalid_spec)
 
 
 def test_spec_validator_invalid_search_engine_type() -> None:
     """Test spec_validator with an invalid search engine type."""
     invalid_spec = {
         "description": {
-            "type": "text",
-            "description": "A detailed description of the product.",
+            "index": {
+                "type": "text_index",
+                "description": "A detailed description of the product.",
+            },
             "search_engine": {
                 "type": "unknown_engine",
             },
         },
     }
 
-    with pytest.raises(SpecSearchEngineError) as excinfo:
-        spec_validator(invalid_spec)
-
-    if (
-        "Index 'description' schema with search engine type name 'unknown_engine'"
-        not in str(excinfo.value)
+    with pytest.raises(
+        SpecSearchEngineError,
+        match="Spec 'description': Search engine type 'unknown_engine' is unknown.",
     ):
-        msg = (
-            "Expected error message not found in exception for invalid search "
-            "engine type."
-        )
-        raise AssertionError(msg)
+        spec_validator(invalid_spec)
 
 
 def test_spec_validator_invalid_schema() -> None:
     """Test spec_validator with an invalid schema."""
     invalid_spec = {
         "price": {
-            "type": "number",
-            "description": "The price of the product.",
-            "range": {
-                "min": "invalid",
-                "max": 10000,
+            "index": {
+                "type": "number_index",
+                "description": "The price of the product.",
+                "range": {
+                    "min": 0,
+                    "max": 10000,
+                },
             },
-            "examples": [19.99, 999.99, 0.00],
             "search_engine": {
-                "type": "text",
+                "type": "number_search",
             },
         },
     }
 
-    with pytest.raises(SpecValidationError) as excinfo:
+    with pytest.raises(SpecValidationError, match="Spec validation errors:"):
         spec_validator(invalid_spec)
-
-    if "Spec validation errors" not in str(excinfo.value):
-        msg = "Expected 'Spec validation errors' in exception message."
-        raise AssertionError(msg)

@@ -1,59 +1,65 @@
 description:
-  type: text
-  description: A detailed description of the product.
-  examples:
-    - "This is clothes for all seasons."
-    - "This is a high-performance laptop."
+  index:
+    type: text_index
+    description: A detailed description of the product.
+    examples:
+      - "This is clothes for all seasons."
+      - "This is a high-performance laptop."
   search_engine:
-    type: "text"
+    type: "text_search"
     config:
       matching_strategy: "contains"
 target_audience:
-  type: text
-  description: The target audience for the product.
-  examples:
-    - "Teens"
-    - "Adults"
-    - "This is for everyone."
+  index:
+    type: text_index
+    description: The target audience for the product.
+    examples:
+      - "Teens"
+      - "Adults"
+      - "This is for everyone."
   search_engine:
-    type: "text"
+    type: "text_search"
     config:
       matching_strategy: "exact"
 is_available:
-  type: boolean
-  description: Indicates if the product is available for purchase.
+  index:
+    type: boolean_index
+    description: Indicates if the product is available for purchase.
   search_engine:
-    type: "boolean"
+    type: "boolean_search"
     config:
       true_value: "available"
       false_value: "not_available"
 price:
-  type: number
-  description: The price of the product.
-  range:
-    min: 0
-    max: 10000
-  examples:
-    - 19.99
-    - 999.99
-    - 0.00
+  index:
+    type: number_index
+    description: The price of the product.
+    range:
+      min: 0
+      max: 10000
+    examples:
+      - 19.99
+      - 999.99
+      - 0.00
   search_engine:
-    type: "number"
+    type: "number_search"
 date:
-  type: date
-  description: The date when the product was added.
-  examples:
-    - "2023-01-01"
-    - "2023-10-15"
+  index:
+    type: date_index
+    description: The date when the product was added.
+    examples:
+      - "2023-01-01"
+      - "2023-10-15"
   search_engine:
-    type: "date"
+    type: "date_search"
     config:
       format: "YYYY-MM-DD"
 image:
-  type: vector
-  description: A vector representation of the product image.
+  index:
+    type: vector_index
+    description: A vector representation of the product image.
   search_engine:
-    type: "vector"
+    type: "vector_search"
     config:
       top_k: 5
       distance_metric: "cosine"

@@ -1,20 +1,20 @@
 """Index module."""
 
-from supersearch.index.schema.base import BaseIndexSchema
-from supersearch.index.schema.bool import BoolIndexSchema
-from supersearch.index.schema.date import DateIndexSchema
-from supersearch.index.schema.hub import index_schema, registered_schemas
-from supersearch.index.schema.number import NumberIndexSchema
-from supersearch.index.schema.text import TextIndexSchema
-from supersearch.index.schema.vector import VectorIndexSchema
+from supersearch.index.base import BaseIndex
+from supersearch.index.bool import BoolIndex
+from supersearch.index.date import DateIndex
+from supersearch.index.hub import index, registered_indexs
+from supersearch.index.number import NumberIndex
+from supersearch.index.text import TextIndex
+from supersearch.index.vector import VectorIndex
 
 __all__ = [
-    "BaseIndexSchema",
-    "BoolIndexSchema",
-    "DateIndexSchema",
-    "NumberIndexSchema",
-    "TextIndexSchema",
-    "VectorIndexSchema",
-    "index_schema",
-    "registered_schemas",
+    "BaseIndex",
+    "BoolIndex",
+    "DateIndex",
+    "NumberIndex",
+    "TextIndex",
+    "VectorIndex",
+    "index",
+    "registered_indexs",
 ]

@@ -31,7 +31,7 @@ class TextSearchResult(BaseSearchResult):
     """Result of text search."""
 
 
-@search_engine("text")
+@search_engine("text_search")
 class TextSearchEngine(BaseSearchEngine):
     """Text search engine."""
 

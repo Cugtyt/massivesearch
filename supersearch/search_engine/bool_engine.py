@@ -49,7 +49,7 @@ class BoolSearchResult(BaseSearchResult):
     """Result of boolean search."""
 
 
-@search_engine("boolean")
+@search_engine("boolean_search")
 class BoolSearchEngine(BaseSearchEngine):
     """Boolean search engine."""
 

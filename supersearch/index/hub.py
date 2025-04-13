@@ -1,6 +1,8 @@
 """Schema registry."""
 
-registered_schemas = {}
+from supersearch.index.base import BaseIndex
+
+registered_indexs: dict[str, type[BaseIndex]] = {}
 
 
 class SchemaRegisterError(Exception):
@@ -11,13 +13,14 @@ class SchemaRegisterError(Exception):
         super().__init__(f"Schema with type name '{type_name}' is already registered.")
 
 
-def index_schema(type_name: str) -> callable:
+def index(name: str) -> type[BaseIndex]:
     """Register a schema with a given key name."""
 
-    def decorator(cls: type) -> type:
-        if type_name in registered_schemas:
-            raise SchemaRegisterError(type_name)
-        registered_schemas[type_name] = cls
+    def decorator(cls: type[BaseIndex]) -> type[BaseIndex]:
+        if name in registered_indexs:
+            raise SchemaRegisterError(cls.type)
+        registered_indexs[name] = cls
+
         return cls
 
     return decorator
