@@ -1,12 +1,13 @@
 """Spec builder for supersearch."""
 
 from inspect import signature
-from typing import Self
 
 from pydantic import BaseModel, create_model
 
 from supersearch.index import registered_indexs
 from supersearch.index.base import BaseIndex
+from supersearch.model.azure_openai import AzureOpenAIClient
+from supersearch.model.base import BaseModelClient
 from supersearch.search_engine import registered_search_engines
 from supersearch.search_engine.base_engine import BaseSearchEngine
 from supersearch.spec.spec_validator import spec_validator
@@ -25,6 +26,7 @@ class SpecBuilder:
         self,
         index_spec: dict[str, BaseIndex] | None = None,
         search_engine_spec: dict[str, BaseSearchEngine] | None = None,
+        model_client: BaseModelClient | None = None,
     ) -> None:
         """Initialize the SpecBuilder with an empty specification."""
         self.index_spec: dict[str, BaseIndex] = index_spec or {}
@@ -32,6 +34,8 @@ class SpecBuilder:
         if self.index_spec.keys() != self.search_engine_spec.keys():
             msg = "Index spec and search engine spec keys do not match."
             raise ValueError(msg)
+
+        self.model_client = model_client or AzureOpenAIClient()
 
     def include(self, spec: dict) -> None:
         """Include a dictionary of schemas to the spec."""
@@ -115,7 +119,7 @@ class SpecBuilder:
             **fields,
         )
 
-    def query(self, query: str) -> Self:
+    def query(self, query: str) -> dict:
         """Query based on the spec."""
         if not self.index_spec:
             msg = "No schemas available to query."
@@ -125,4 +129,10 @@ class SpecBuilder:
             msg = "Query string cannot be empty."
             raise ValueError(msg)
 
+        response = self.model_client.response(
+            self.build_prompt(query),
+            self.build_format(),
+        )
+
+        print(response)
         return self

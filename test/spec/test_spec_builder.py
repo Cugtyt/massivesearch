@@ -3,6 +3,7 @@
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import anyio
 import pytest
 import yaml
 
@@ -180,20 +181,16 @@ def test_spec_builder_build_format() -> None:
         msg = "The model does not have the expected annotation."
         raise ValueError(msg)
 
-
 def test_spec_builder_query() -> None:
     """Test querying with SpecBuilder."""
-    builder = SpecBuilder()
-    text_index = TextIndex(
-        description="A text schema.",
-        examples=["example1", "example2"],
-    )
-    mock_search_engine = MagicMock()
-    builder.add("text_schema", text_index, mock_search_engine)
-    result = builder.query("Find something")
-    if result != builder:
-        msg = "Expected result to be equal to builder."
-        raise ValueError(msg)
+    spec_file_path = Path("./test/spec/test_spec.yaml")
+
+    with spec_file_path.open() as file:
+        valid_spec = yaml.safe_load(file)
+
+    builder_from_file = SpecBuilder()
+    builder_from_file.include(valid_spec)
+    builder_from_file.query("for teens < $100")
 
 
 def test_spec_builder_empty_spec_error() -> None:

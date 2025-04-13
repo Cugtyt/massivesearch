@@ -3,11 +3,13 @@
 from typing import Self
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
-from openai import AsyncAzureOpenAI
+from openai import AzureOpenAI
 from openai.types.chat import ParsedChatCompletion
 
+from supersearch.model.base import BaseModelClient
 
-class AzureOpenAIClient:
+
+class AzureOpenAIClient(BaseModelClient):
     """A client wrapper for interacting with the Azure OpenAI service."""
 
     def __init__(self) -> Self:
@@ -18,20 +20,21 @@ class AzureOpenAIClient:
             DefaultAzureCredential(),
             "https://cognitiveservices.azure.com/.default",
         )
-        self.client = AsyncAzureOpenAI(
-            endpoint=self.endpoint,
+        self.model = "gpt-4o"
+        self.client = AzureOpenAI(
+            azure_deployment=self.model,
+            azure_endpoint=self.endpoint,
             api_version=self.api_version,
             azure_ad_token_provider=token_provider,
         )
-        self.model = "gpt-4o"
 
-    async def response(
+    def response(
         self,
         messages: list,
         output_format: type,
     ) -> ParsedChatCompletion:
         """Get a response from the Azure OpenAI service."""
-        return await self.client.beta.chat.completions.parse(
+        return self.client.beta.chat.completions.parse(
             model=self.model,
             messages=messages,
             response_format=output_format,
