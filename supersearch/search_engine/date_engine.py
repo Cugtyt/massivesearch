@@ -1,6 +1,6 @@
 """Date search engine."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Self
 
 from pydantic import BaseModel, Field, model_validator
@@ -38,15 +38,15 @@ class DateRange(BaseModel):
         if not self.start_date and not self.end_date:
             msg = "Both start_date and end_date cannot be None."
             raise ValueError(msg)
+        if not self.start_date:
+            self.start_date = "1970-01-01"
+        if not self.end_date:
+            self.end_date = "2025-12-31"
         start_date_obj = (
-            datetime.strptime(self.start_date, "%Y-%m-%d")
-            .replace(tzinfo=datetime.timezone.utc)
-            .date()
+            datetime.strptime(self.start_date, "%Y-%m-%d").replace(tzinfo=UTC).date()
         )
         end_date_obj = (
-            datetime.strptime(self.end_date, "%Y-%m-%d")
-            .replace(tzinfo=datetime.timezone.utc)
-            .date()
+            datetime.strptime(self.end_date, "%Y-%m-%d").replace(tzinfo=UTC).date()
         )
         if start_date_obj > end_date_obj:
             msg = "start_date must be earlier than or equal to end_date."

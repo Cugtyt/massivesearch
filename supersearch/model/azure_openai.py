@@ -32,7 +32,7 @@ class AzureOpenAIClient(BaseModelClient):
         self,
         messages: list,
         output_format: type,
-    ) -> dict:
+    ) -> list[dict]:
         """Get a response from the Azure OpenAI service."""
         r = self.client.beta.chat.completions.parse(
             model=self.model,

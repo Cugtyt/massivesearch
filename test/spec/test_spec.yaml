@@ -57,7 +57,7 @@ date:
 image:
   index:
     type: vector_index
-    description: A vector representation of the product image.
+    description: Product images, use language to query the images, like "red dress".
   search_engine:
     type: "vector_search"
     config:

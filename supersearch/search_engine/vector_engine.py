@@ -14,12 +14,21 @@ from supersearch.search_engine.hub import search_engine
 class VectorSearchEngineConfig(BaseSearchEngineConfig):
     """Config for vector search engines."""
 
+    top_k: int = Field(
+        default=5,
+        description="Number of top results to return from the vector search engine.",
+    )
+    distance_metric: str = Field(
+        default="cosine",
+        description="Distance metric to use for vector search.",
+    )
+
 
 class VectorSearchEngineArguments(BaseSearchEngineArguments):
     """Arguments for vector search engines."""
 
     querys: list[str] = Field(
-        description="List of querys for the search engine.",
+        description="List of language querys to to query the vector search engine.",
     )
 
 

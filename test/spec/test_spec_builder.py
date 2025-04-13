@@ -1,9 +1,9 @@
 """Tests for SpecBuilder."""
 
+import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import anyio
 import pytest
 import yaml
 
@@ -173,32 +173,19 @@ def test_spec_builder_build_format() -> None:
         config=TextSearchEngineConfig(),
     )
     builder.add("number_schema", number_index, search_engine)
-    model = builder.build_format()
-    if "number_schema" not in model.model_fields:
+    format_model = builder.build_format()
+    if "queries" not in format_model.model_fields:
         msg = "The model does not have the expected schema."
         raise ValueError(msg)
-    if model.model_fields["number_schema"].annotation != TextSearchEngineArguments:
-        msg = "The model does not have the expected annotation."
-        raise ValueError(msg)
-
-def test_spec_builder_query() -> None:
-    """Test querying with SpecBuilder."""
-    spec_file_path = Path("./test/spec/test_spec.yaml")
-
-    with spec_file_path.open() as file:
-        valid_spec = yaml.safe_load(file)
-
-    builder_from_file = SpecBuilder()
-    builder_from_file.include(valid_spec)
-    query = builder_from_file.query("for teens < $100")
-    if not query:
-        msg = "Query should not be empty."
-        raise ValueError(msg)
-    if not isinstance(query, dict):
-        msg = "Query should be a dictionary."
+    query_list_type = format_model.model_fields["queries"].annotation
+    if (
+        not hasattr(query_list_type, "__origin__")
+        and query_list_type.__origin__ is not list
+    ):
+        msg = "The queries field is not a list."
         raise TypeError(msg)
-    if "Teens" not in query["target_audience"]["keywords"]:
-        msg = "Expected 'Teens' to be in the query."
+    if "number_schema" not in query_list_type.__args__[0].model_fields:
+        msg = "The queries field does not contain the expected schema."
         raise ValueError(msg)
 
 
@@ -231,3 +218,65 @@ def test_spec_builder_empty_query_error() -> None:
     builder.add("text_schema", text_index, text_search_engine)
     with pytest.raises(ValueError, match="Query string cannot be empty."):
         builder.query("")
+
+
+def test_spec_builder_query() -> None:
+    """Test querying with SpecBuilder."""
+    spec_file_path = Path("./test/spec/test_spec.yaml")
+
+    with spec_file_path.open() as file:
+        valid_spec = yaml.safe_load(file)
+
+    builder_from_file = SpecBuilder()
+    builder_from_file.include(valid_spec)
+    query_arguments = builder_from_file.query("for teens < $100")
+    if not query_arguments:
+        msg = "Query should not be empty."
+        raise ValueError(msg)
+    if not isinstance(query_arguments, list):
+        msg = "Query should be a dictionary."
+        raise TypeError(msg)
+    if "Teens" not in query_arguments[0]["target_audience"]["keywords"]:
+        msg = "Expected 'Teens' to be in the query."
+        raise ValueError(msg)
+
+
+def test_spec_builder_complex_query() -> None:
+    """Test querying with SpecBuilder."""
+    spec_file_path = Path("./test/spec/test_spec.yaml")
+
+    with spec_file_path.open() as file:
+        valid_spec = yaml.safe_load(file)
+
+    builder_from_file = SpecBuilder()
+    builder_from_file.include(valid_spec)
+    query_arguments = builder_from_file.query(
+        "I want to buy a book for white snow, I only have $10, I am 10 years old, "
+        "I want the book in English and produced after 2020",
+    )
+    if not query_arguments:
+        msg = "Query should not be empty."
+        raise ValueError(msg)
+    if not isinstance(query_arguments, list):
+        msg = "Query should be a dictionary."
+        raise TypeError(msg)
+
+    query_to_string = json.dumps(query_arguments, indent=2)
+    if "snow" not in query_to_string:
+        msg = "Expected 'snow' to be in the query."
+        raise ValueError(msg)
+    if "10" not in query_to_string:
+        msg = "Expected '10' to be in the query."
+        raise ValueError(msg)
+    if "English" not in query_to_string:
+        msg = "Expected 'English' to be in the query."
+        raise ValueError(msg)
+    if "2020" not in query_to_string:
+        msg = "Expected '2020' to be in the query."
+        raise ValueError(msg)
+    if "white" not in query_to_string:
+        msg = "Expected 'white' to be in the query."
+        raise ValueError(msg)
+    if "book" not in query_to_string:
+        msg = "Expected 'book' to be in the query."
+        raise ValueError(msg)

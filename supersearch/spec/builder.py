@@ -12,8 +12,35 @@ from supersearch.search_engine import registered_search_engines
 from supersearch.search_engine.base_engine import BaseSearchEngine
 from supersearch.spec.spec_validator import spec_validator
 
-STSTEM_PROMPT_TEMPLATE = """Fill the search engine arguments based on the user's intent
-and current index information.
+STSTEM_PROMPT_TEMPLATE = """Fill the search engine query arguments
+based on the user's intent and current index information.
+
+You will break down the user's intent into one or multiple queries,
+and each query will be passed to the search engine.
+These queries will be executed in parallel and aggregated.
+Every query in the array represents an independent search path.
+
+The relationship between different queries in the array is OR -
+results matching ANY of the queries will be included in the final results.
+
+Within each individual query, parameters have an AND relationship -
+all conditions within a single query must be satisfied simultaneously.
+
+For example, with a query array of 5 elements, where each element contains
+3 parameters:
+- Query 1: (param1 AND param2 AND param3)
+- Query 2: (param1 AND param2 AND param3)
+- Query 3: (param1 AND param2 AND param3)
+- Query 4: (param1 AND param2 AND param3)
+- Query 5: (param1 AND param2 AND param3)
+
+The final search logic is:
+(Query 1) OR (Query 2) OR (Query 3) OR (Query 4) OR (Query 5)
+
+This structure allows you to create complex search patterns that capture
+different aspects of the user's intent while maintaining logical clarity.
+
+The following is the index information:
 
 {context}
 """
@@ -114,12 +141,13 @@ class SpecBuilder:
             arguments_type = self._get_arguments_type(search_engine)
             fields[name] = arguments_type
 
+        single_query_format = create_model("SingleQueryFormat", **fields)
         return create_model(
-            "SearchEngineArguments",
-            **fields,
+            "MultiQueryFormat",
+            queries=list[single_query_format],
         )
 
-    def query(self, query: str) -> dict:
+    def query(self, query: str) -> list[dict]:
         """Query based on the spec."""
         if not self.index_spec:
             msg = "No schemas available to query."
@@ -129,7 +157,15 @@ class SpecBuilder:
             msg = "Query string cannot be empty."
             raise ValueError(msg)
 
-        return self.model_client.response(
+        q = self.model_client.response(
             self.build_prompt(query),
             self.build_format(),
         )
+        try:
+            return q["queries"]
+        except KeyError:
+            msg = "Failed to parse response: 'queries' key not found."
+            raise ValueError(msg) from None
+        except Exception as e:
+            msg = f"Unexpected error: {e}"
+            raise ValueError(msg) from e
