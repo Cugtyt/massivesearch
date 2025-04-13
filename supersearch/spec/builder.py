@@ -129,10 +129,7 @@ class SpecBuilder:
             msg = "Query string cannot be empty."
             raise ValueError(msg)
 
-        response = self.model_client.response(
+        return self.model_client.response(
             self.build_prompt(query),
             self.build_format(),
         )
-
-        print(response)
-        return self

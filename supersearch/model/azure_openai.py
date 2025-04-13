@@ -1,10 +1,10 @@
 """Model module."""
 
+import json
 from typing import Self
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
-from openai.types.chat import ParsedChatCompletion
 
 from supersearch.model.base import BaseModelClient
 
@@ -15,7 +15,7 @@ class AzureOpenAIClient(BaseModelClient):
     def __init__(self) -> Self:
         """Initialize the Azure OpenAI client."""
         self.endpoint = "https://smarttsg-gpt.openai.azure.com/"
-        self.api_version = "2024-02-15-preview"
+        self.api_version = "2024-08-01-preview"
         token_provider = get_bearer_token_provider(
             DefaultAzureCredential(),
             "https://cognitiveservices.azure.com/.default",
@@ -32,10 +32,19 @@ class AzureOpenAIClient(BaseModelClient):
         self,
         messages: list,
         output_format: type,
-    ) -> ParsedChatCompletion:
+    ) -> dict:
         """Get a response from the Azure OpenAI service."""
-        return self.client.beta.chat.completions.parse(
+        r = self.client.beta.chat.completions.parse(
             model=self.model,
             messages=messages,
             response_format=output_format,
         )
+        content_str = r.choices[0].message.content
+        try:
+            return json.loads(content_str)
+        except json.JSONDecodeError as e:
+            msg = f"Failed to parse JSON response: {e}"
+            raise ValueError(msg) from e
+        except Exception as e:
+            msg = f"Unexpected error: {e}"
+            raise ValueError(msg) from e

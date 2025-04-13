@@ -190,7 +190,16 @@ def test_spec_builder_query() -> None:
 
     builder_from_file = SpecBuilder()
     builder_from_file.include(valid_spec)
-    builder_from_file.query("for teens < $100")
+    query = builder_from_file.query("for teens < $100")
+    if not query:
+        msg = "Query should not be empty."
+        raise ValueError(msg)
+    if not isinstance(query, dict):
+        msg = "Query should be a dictionary."
+        raise TypeError(msg)
+    if "Teens" not in query["target_audience"]["keywords"]:
+        msg = "Expected 'Teens' to be in the query."
+        raise ValueError(msg)
 
 
 def test_spec_builder_empty_spec_error() -> None:
