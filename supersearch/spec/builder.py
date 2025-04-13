@@ -6,11 +6,10 @@ from pydantic import BaseModel, create_model
 
 from supersearch.index import registered_indexs
 from supersearch.index.base import BaseIndex
-from supersearch.model.azure_openai import AzureOpenAIClient
-from supersearch.model.base import BaseModelClient
 from supersearch.search_engine import registered_search_engines
 from supersearch.search_engine.base_engine import BaseSearchEngine
-from supersearch.spec.spec_validator import spec_validator
+from supersearch.spec.spec import Spec
+from supersearch.spec.validator import spec_validator
 
 STSTEM_PROMPT_TEMPLATE = """Fill the search engine query arguments
 based on the user's intent and current index information.
@@ -53,7 +52,6 @@ class SpecBuilder:
         self,
         index_spec: dict[str, BaseIndex] | None = None,
         search_engine_spec: dict[str, BaseSearchEngine] | None = None,
-        model_client: BaseModelClient | None = None,
     ) -> None:
         """Initialize the SpecBuilder with an empty specification."""
         self.index_spec: dict[str, BaseIndex] = index_spec or {}
@@ -61,8 +59,6 @@ class SpecBuilder:
         if self.index_spec.keys() != self.search_engine_spec.keys():
             msg = "Index spec and search engine spec keys do not match."
             raise ValueError(msg)
-
-        self.model_client = model_client or AzureOpenAIClient()
 
     def include(self, spec: dict) -> None:
         """Include a dictionary of schemas to the spec."""
@@ -93,7 +89,7 @@ class SpecBuilder:
         self.index_spec[name] = index
         self.search_engine_spec[name] = search_engine
 
-    def build_prompt(self, query: str) -> list[dict[str, str]]:
+    def build_prompt(self) -> str:
         """Build the prompt for the spec."""
         if not self.index_spec:
             msg = "No schemas available to build a prompt."
@@ -102,16 +98,7 @@ class SpecBuilder:
         index_context = "\n".join(
             schema.schema_prompt(name) for name, schema in self.index_spec.items()
         )
-        return [
-            {
-                "role": "system",
-                "content": STSTEM_PROMPT_TEMPLATE.format(context=index_context),
-            },
-            {
-                "role": "user",
-                "content": query,
-            },
-        ]
+        return STSTEM_PROMPT_TEMPLATE.format(context=index_context)
 
     def _get_arguments_type(self, search_engine: BaseSearchEngine) -> type[BaseModel]:
         """Get the arguments type for the search engine."""
@@ -147,25 +134,18 @@ class SpecBuilder:
             queries=list[single_query_format],
         )
 
-    def query(self, query: str) -> list[dict]:
-        """Query based on the spec."""
+    @property
+    def spec(self) -> Spec:
+        """Return the spec."""
         if not self.index_spec:
-            msg = "No schemas available to query."
+            msg = "No schemas available to build the spec."
             raise ValueError(msg)
-
-        if not query:
-            msg = "Query string cannot be empty."
+        if not self.search_engine_spec:
+            msg = "No search engine schemas available to build the spec."
             raise ValueError(msg)
-
-        q = self.model_client.response(
-            self.build_prompt(query),
-            self.build_format(),
+        return Spec(
+            index_spec=self.index_spec,
+            search_engine_spec=self.search_engine_spec,
+            prompt_message=self.build_prompt(),
+            format_model=self.build_format(),
         )
-        try:
-            return q["queries"]
-        except KeyError:
-            msg = "Failed to parse response: 'queries' key not found."
-            raise ValueError(msg) from None
-        except Exception as e:
-            msg = f"Unexpected error: {e}"
-            raise ValueError(msg) from e

@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from supersearch.spec.spec_validator import (
+from supersearch.spec.validator import (
     SpecIndexTypeError,
     SpecSearchEngineError,
     SpecValidationError,

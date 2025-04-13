@@ -12,7 +12,7 @@ from supersearch.model.base import BaseModelClient
 class AzureOpenAIClient(BaseModelClient):
     """A client wrapper for interacting with the Azure OpenAI service."""
 
-    def __init__(self) -> Self:
+    def __init__(self, **kwargs: dict[str, str]) -> Self:
         """Initialize the Azure OpenAI client."""
         self.endpoint = "https://smarttsg-gpt.openai.azure.com/"
         self.api_version = "2024-08-01-preview"
@@ -27,6 +27,7 @@ class AzureOpenAIClient(BaseModelClient):
             api_version=self.api_version,
             azure_ad_token_provider=token_provider,
         )
+        self.kwargs = kwargs or {}
 
     def response(
         self,
@@ -38,6 +39,7 @@ class AzureOpenAIClient(BaseModelClient):
             model=self.model,
             messages=messages,
             response_format=output_format,
+            **self.kwargs,
         )
         content_str = r.choices[0].message.content
         try:
