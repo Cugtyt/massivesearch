@@ -42,14 +42,15 @@ class Worker:
             msg = f"Unexpected error: {e}"
             raise ValueError(msg) from e
 
-    def execute(self, query: str) -> list[BaseSearchResult]:
+    def execute(self, query: str) -> list[dict[str, BaseSearchResult]]:
         """Execute the query."""
         search_queries = self.build_query(query)
         results = []
         for search_query in search_queries:
+            result = {}
             for name, arguments in search_query.items():
                 search_engine = self.spec.search_engine_spec[name]
-                result = search_engine.search(arguments=arguments)
-                results.append(result)
+                result[name] = search_engine.search(arguments)
+            results.append(result)
 
         return results
