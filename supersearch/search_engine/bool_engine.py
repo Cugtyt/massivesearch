@@ -8,6 +8,7 @@ from supersearch.search_engine.base_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
+    BaseSearchResult,
 )
 from supersearch.search_engine.hub import search_engine
 
@@ -44,9 +45,19 @@ class BoolSearchEngineArguments(BaseSearchEngineArguments):
         return self
 
 
+class BoolSearchResult(BaseSearchResult):
+    """Result of boolean search."""
+
+
 @search_engine("boolean")
 class BoolSearchEngine(BaseSearchEngine):
     """Boolean search engine."""
 
-    config: BoolSearchEngineConfig | None
-    arguments: BoolSearchEngineArguments | None = None
+    config: BoolSearchEngineConfig
+
+    def search(self, arguments: BoolSearchEngineArguments) -> BoolSearchResult:
+        """Search for boolean values."""
+        if not isinstance(arguments, BoolSearchEngineArguments):
+            msg = "Arguments must be BoolSearchEngineArguments"
+            raise TypeError(msg)
+        return BoolSearchResult()

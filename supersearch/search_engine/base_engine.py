@@ -1,5 +1,7 @@
 """Base class for search engines."""
 
+from abc import abstractmethod
+
 from pydantic import BaseModel
 
 
@@ -11,8 +13,15 @@ class BaseSearchEngineArguments(BaseModel):
     """Arguments for search engines."""
 
 
+class BaseSearchResult(BaseModel):
+    """Base class for search results."""
+
+
 class BaseSearchEngine(BaseModel):
     """Base class for search engines."""
 
-    config: BaseSearchEngineConfig | None = None
-    arguments: BaseSearchEngineArguments | None = None
+    config: BaseSearchEngineConfig
+
+    @abstractmethod
+    def search(self, arguments: BaseSearchEngineArguments) -> BaseSearchResult:
+        """Search for the given arguments."""

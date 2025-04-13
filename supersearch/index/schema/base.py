@@ -4,12 +4,19 @@ from abc import ABC
 
 from pydantic import BaseModel
 
-from supersearch.search_engine.base_engine import BaseSearchEngine
-
 
 class BaseIndexSchema(BaseModel, ABC):
     """Base class for index schemas."""
 
     description: str
     examples: list | None = None
-    search_engine: BaseSearchEngine
+
+    def schema_prompt(self, index_name: str) -> str:
+        """Return the prompt for the index schema."""
+        return "\n".join(
+            [
+                f"Index Name: {index_name}",
+                f"Description: {self.description}",
+                f"Examples: {self.examples}" if self.examples else "",
+            ],
+        )

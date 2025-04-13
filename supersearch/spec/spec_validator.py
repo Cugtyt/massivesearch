@@ -46,14 +46,14 @@ def spec_validator(spec: dict) -> None:
         index_type_name = schema.get("type")
         if index_type_name not in registered_schemas:
             raise SpecIndexTypeError(index_name, index_type_name)
-        search_engine_type_name = schema.get("search_engine", {}).get("type")
+        search_engine_type_name: str = schema.get("search_engine", {}).get("type", "")
         if search_engine_type_name not in registered_search_engines:
             raise SpecSearchEngineError(index_name, search_engine_type_name)
         try:
             registered_schemas[index_type_name](**schema)
-            registered_search_engines[search_engine_type_name](
-                **schema.get("search_engine"),
-            )
+            registered_search_engines[search_engine_type_name].model_fields[
+                "config"
+            ].annotation(**schema.get("search_engine"))
         except ValidationError as e:
             validation_errors[index_name] = str(e)
 

@@ -13,8 +13,6 @@ __all__ = [
     "BoolIndexSchema",
     "DateIndexSchema",
     "NumberIndexSchema",
-    "SchemaTypeError",
-    "SchemaValidationError",
     "TextIndexSchema",
     "VectorIndexSchema",
     "index_schema",
