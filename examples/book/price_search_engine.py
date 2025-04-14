@@ -4,7 +4,7 @@ import operator
 from functools import reduce
 
 import pandas as pd
-from book_search_result import BookSearchResult
+from search_result import BookSearchResult
 
 from massivesearch.search_engine.number_engine import (
     NumberSearchEngine,
@@ -56,4 +56,4 @@ class BookTextSearch(NumberSearchEngine):
             combined_mask = reduce(operator.or_, masks)
             final_result_df = book_df[combined_mask]
 
-        return BookSearchResult(result=final_result_df)
+        return final_result_df

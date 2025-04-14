@@ -1,7 +1,7 @@
 """Book Text Search Engine."""  # noqa: INP001
 
 import pandas as pd
-from book_search_result import BookSearchResult
+from search_result import BookSearchResult
 
 from massivesearch.search_engine.text_engine import (
     TextSearchEngine,
@@ -47,4 +47,4 @@ class BookTextSearch(TextSearchEngine):
                 msg = "Invalid matching strategy."
                 raise ValueError(msg)
 
-        return BookSearchResult(result=result)
+        return result

@@ -1,14 +1,9 @@
 """Book search result."""  # noqa: INP001
 
-from dataclasses import dataclass
-
 import pandas as pd
 
 from massivesearch.spec.base_search_engine import BaseSearchResult
 
 
-@dataclass
-class BookSearchResult(BaseSearchResult):
+class BookSearchResult(pd.DataFrame, BaseSearchResult):
     """Result of book text search."""
-
-    result: pd.DataFrame

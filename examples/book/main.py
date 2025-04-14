@@ -4,10 +4,11 @@ import logging
 from pathlib import Path
 
 import yaml
-from book_price_search_engine import (
+from aggregate import BookAggregator
+from price_search_engine import (
     book_builder as book_price_search_builder,
 )
-from book_text_search_engine import (
+from text_search_engine import (
     book_builder as book_text_search_builder,
 )
 
@@ -39,16 +40,10 @@ def main() -> None:
         "I want to buy a book about prince or lord, and I only have 20 dollars.",
     )
 
-    for execute_result in execute_results:
-        logger.info("Query: %s", execute_result.query)
-        logger.info("")
-
-        for name, result in execute_result.result.items():
-            logger.info("Searching for: %s", name)
-            logger.info("Result:")
-            logger.info(result.result)
-
-            logger.info("-" * 80)
+    aggregator = BookAggregator()
+    agg_result = aggregator.aggregate(execute_results)
+    logger.info("Books:")
+    logger.info(agg_result.books)
 
 
 if __name__ == "__main__":
