@@ -3,7 +3,10 @@
 from pydantic import BaseModel
 
 from supersearch.spec.base_index import BaseIndex
-from supersearch.spec.base_search_engine import BaseSearchEngine
+from supersearch.spec.base_search_engine import (
+    BaseSearchEngine,
+    BaseSearchEngineArguments,
+)
 
 
 class SpecUnit(BaseModel):
@@ -11,6 +14,7 @@ class SpecUnit(BaseModel):
 
     index: BaseIndex
     search_engine: BaseSearchEngine
+    search_engine_arguments_type: type[BaseSearchEngineArguments]
 
 
 class Spec(BaseModel):

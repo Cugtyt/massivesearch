@@ -101,7 +101,11 @@ class SpecBuilder:
             msg = f"Spec with name '{name}' already exists."
             raise ValueError(msg)
 
-        self.spec_units[name] = SpecUnit(index=index, search_engine=search_engine)
+        self.spec_units[name] = SpecUnit(
+            index=index,
+            search_engine=search_engine,
+            search_engine_arguments_type=self._get_arguments_type(search_engine),
+        )
 
     def build_prompt(self) -> str:
         """Build the prompt for the spec."""

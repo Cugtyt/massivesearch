@@ -1,10 +1,20 @@
 """Worker."""
 
+from dataclasses import dataclass
+
 from pydantic import ValidationError
 
 from supersearch.model.base import BaseModelClient
 from supersearch.spec import Spec
 from supersearch.spec.base_search_engine import BaseSearchResult
+
+
+@dataclass
+class WorkerExecuteResult:
+    """Worker execute result."""
+
+    query: dict
+    result: dict[str, BaseSearchResult]
 
 
 class Worker:
@@ -28,7 +38,7 @@ class Worker:
             },
         ]
 
-    def build_query(self, query: str) -> dict:
+    def build_query(self, query: str) -> list[dict]:
         """Generate the query based on the spec."""
         response = self.model_client.response(
             self._build_messages(query),
@@ -48,15 +58,25 @@ class Worker:
             msg = f"Unexpected error: {e}"
             raise ValueError(msg) from e
 
-    def execute(self, query: str) -> list[dict[str, BaseSearchResult]]:
+    def execute(self, query: str) -> list[WorkerExecuteResult]:
         """Execute the query."""
         search_queries = self.build_query(query)
-        results = []
+        execute_results = []
         for search_query in search_queries:
             result = {}
-            for name, arguments in search_query.items():
-                search_engine = self.spec.search_engine_spec[name]
-                result[name] = search_engine.search(arguments)
-            results.append(result)
+            for name, spec_unit in self.spec.items.items():
+                search_engine_arguments = spec_unit.search_engine_arguments_type(
+                    **search_query[name],
+                )
+                search_result = spec_unit.search_engine.search(
+                    search_engine_arguments,
+                )
+                result[name] = search_result
+            execute_results.append(
+                WorkerExecuteResult(
+                    query=search_query,
+                    result=result,
+                ),
+            )
 
-        return results
+        return execute_results

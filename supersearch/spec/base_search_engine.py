@@ -1,6 +1,6 @@
 """Base class for search engines."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from pydantic import BaseModel
 
@@ -13,7 +13,7 @@ class BaseSearchEngineArguments(BaseModel):
     """Arguments for search engines."""
 
 
-class BaseSearchResult(BaseModel, ABC):
+class BaseSearchResult:
     """Base class for search results."""
 
 
