@@ -1,23 +1,28 @@
-"""Book aggregate."""  # noqa: INP001
+"""Aggregator for pandas DataFrames."""
+
+from abc import ABC, abstractmethod
 
 import pandas as pd
-from data_loader import load_data
 
-from massivesearch.aggregator.aggregator import Aggregator
-from massivesearch.worker.worker import WorkerExecuteResult
+from massivesearch.ext.pandas.types import PandasAggregatorResult
+from massivesearch.worker import WorkerExecuteResult
 
 
-class BookAggregator(Aggregator):
-    """Book aggregator."""
+class PandasAggregator(ABC):
+    """Aggregator class."""
+
+    @abstractmethod
+    def load_df(self) -> pd.DataFrame:
+        """Load data for aggregation."""
 
     def aggregate(
         self,
-        execute_results: list[dict[str, WorkerExecuteResult]],
-    ) -> pd.DataFrame:
+        worker_results: list[WorkerExecuteResult],
+    ) -> PandasAggregatorResult:
         """Aggregate the search results."""
         all_common_indices = []
 
-        for single_search_result in execute_results:
+        for single_search_result in worker_results:
             partial_results = list(single_search_result.result.values())
             if partial_results and len(partial_results) > 0:
                 common_indices = partial_results[0]
@@ -27,7 +32,7 @@ class BookAggregator(Aggregator):
                 if len(common_indices) > 0:
                     all_common_indices.append(common_indices)
 
-        book_df = load_data()
+        book_df = self.load_df()
         if all_common_indices:
             combined_indices = pd.Index([]).union(*all_common_indices)
             unique_indices = combined_indices[

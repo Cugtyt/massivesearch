@@ -1,17 +1,15 @@
 """Book search example."""  # noqa: INP001
 
+import functools  # Add this import
 import logging
 from pathlib import Path
 
+import pandas as pd
 import yaml
-from aggregate import BookAggregator
-from price_search_engine import (
-    book_builder as book_price_search_builder,
-)
-from text_search_engine import (
-    book_builder as book_text_search_builder,
-)
 
+from massivesearch.ext.pandas.aggregator import PandasAggregator
+from massivesearch.ext.pandas.number import PandasNumberSearchEngine
+from massivesearch.ext.pandas.text import PandasTextSearchEngine
 from massivesearch.index import number_index_spec_builder, text_index_spec_builder
 from massivesearch.model.azure_openai import AzureOpenAIClient
 from massivesearch.worker import Worker
@@ -20,14 +18,41 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+book_builder = text_index_spec_builder | number_index_spec_builder
+
+
+@functools.lru_cache(maxsize=1)
+def load_df() -> pd.DataFrame:
+    """Load book data from a CSV file. Caches the result."""
+    file_path: str = "examples/book/books.csv"
+    logger.info("Loading data from %s...", file_path)
+    return pd.read_csv(file_path)
+
+
+class BookDataMixin:
+    """Mixin class to provide book data loading."""
+
+    def load_df(self) -> pd.DataFrame:
+        """Load book data using the cached function."""
+        return load_df()
+
+
+@book_builder.search_engine("book_text_search")
+class BookTextSearchEngine(BookDataMixin, PandasTextSearchEngine):
+    """Book text search engine."""
+
+
+@book_builder.search_engine("book_price_search")
+class BookPriceSearchEngine(BookDataMixin, PandasNumberSearchEngine):
+    """Book price search engine."""
+
+
+class BookAggregator(BookDataMixin, PandasAggregator):
+    """Book aggregator."""
+
+
 def main() -> None:
     """Run the book search example."""
-    book_builder = (
-        book_text_search_builder
-        | book_price_search_builder
-        | text_index_spec_builder
-        | number_index_spec_builder
-    )
     with Path("./examples/book/book_spec.yaml").open() as file:
         spec_file = yaml.safe_load(file)
 
