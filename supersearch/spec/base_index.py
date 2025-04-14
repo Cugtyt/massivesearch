@@ -11,7 +11,7 @@ class BaseIndex(BaseModel, ABC):
     description: str
     examples: list | None = None
 
-    def schema_prompt(self, index_name: str) -> str:
+    def prompt(self, index_name: str) -> str:
         """Return the prompt for the index schema."""
         return "\n".join(
             [

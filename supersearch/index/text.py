@@ -1,10 +1,11 @@
 """Text Index Schema."""
 
-from supersearch.index.base import BaseIndex
-from supersearch.index.hub import index
+from supersearch.spec import BaseIndex, SpecBuilder
+
+spec_builder = SpecBuilder()
 
 
-@index("text_index")
+@spec_builder.index("text_index")
 class TextIndex(BaseIndex):
     """Schema for text index."""
 

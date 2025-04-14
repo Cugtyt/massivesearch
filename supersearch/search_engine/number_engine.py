@@ -4,14 +4,15 @@ from typing import Self
 
 from pydantic import BaseModel, Field, model_validator
 
-from supersearch.search_engine.base_engine import (
+from supersearch.spec.base_search_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
     BaseSearchResult,
 )
-from supersearch.search_engine.hub import search_engine
+from supersearch.spec.builder import SpecBuilder
 
+spec_builder = SpecBuilder()
 
 class NumberSearchEngineConfig(BaseSearchEngineConfig):
     """Config for number search engine."""
@@ -55,7 +56,7 @@ class NumberSearchResult(BaseSearchResult):
     """Result of number search."""
 
 
-@search_engine("number_search")
+@spec_builder.search_engine("number_search")
 class NumberSearchEngine(BaseSearchEngine):
     """Number search engine."""
 

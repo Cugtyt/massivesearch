@@ -4,13 +4,15 @@ from typing import Literal
 
 from pydantic import Field
 
-from supersearch.search_engine.base_engine import (
+from supersearch.spec.base_search_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
     BaseSearchResult,
 )
-from supersearch.search_engine.hub import search_engine
+from supersearch.spec.builder import SpecBuilder
+
+spec_builder = SpecBuilder()
 
 
 class TextSearchEngineConfig(BaseSearchEngineConfig):
@@ -31,7 +33,7 @@ class TextSearchResult(BaseSearchResult):
     """Result of text search."""
 
 
-@search_engine("text_search")
+@spec_builder.search_engine("text_search")
 class TextSearchEngine(BaseSearchEngine):
     """Text search engine."""
 

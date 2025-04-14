@@ -1,7 +1,7 @@
 """Worker."""
 
 from supersearch.model.base import BaseModelClient
-from supersearch.search_engine.base_engine import BaseSearchResult
+from supersearch.spec.base_search_engine import BaseSearchResult
 from supersearch.spec import Spec
 
 

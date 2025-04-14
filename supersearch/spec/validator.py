@@ -2,8 +2,13 @@
 
 from pydantic import ValidationError
 
-from supersearch.index import registered_indexs
-from supersearch.search_engine import registered_search_engines
+from supersearch.spec.base_index import BaseIndex
+from supersearch.spec.base_search_engine import (
+    BaseSearchEngine,
+    BaseSearchEngineArguments,
+    BaseSearchEngineConfig,
+    BaseSearchResult,
+)
 
 
 class SpecIndexTypeError(Exception):
@@ -31,8 +36,11 @@ class SpecValidationError(Exception):
             f"Spec validation errors: {errors}",
         )
 
-
-def spec_validator(spec: dict) -> None:
+def spec_validator(
+    spec: dict,
+    registered_indexs: dict[str, BaseIndex],
+    registered_search_engines: dict[str, BaseSearchEngine],
+) -> None:
     """Validate the spec."""
     validation_errors = {}
     for name, schema in spec.items():
@@ -68,3 +76,48 @@ def spec_validator(spec: dict) -> None:
 
     if validation_errors:
         raise SpecValidationError(validation_errors)
+
+
+def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
+    """Validate the search engine class."""
+    _validate_config(cls)
+    _validate_search_method(cls)
+
+
+
+def _validate_config(cls: type[BaseSearchEngine]) -> None:
+    if cls.model_fields.get("config") is None:
+        msg = f"{cls.__name__} must have a config attribute."
+        raise AttributeError(msg)
+    if not issubclass(
+        cls.model_fields.get("config").annotation,
+        BaseSearchEngineConfig,
+    ):
+        msg = f"{cls.__name__} config must be a subclass of BaseSearchEngineConfig."
+        raise TypeError(msg)
+
+
+def _validate_search_method(cls: type[BaseSearchEngine]) -> None:
+    if hasattr(cls, "search") and not callable(cls.search):
+        msg = f"{cls.__name__} must have a callable search method."
+        raise AttributeError(msg)
+    if cls.search.__annotations__.get("arguments") is None:
+        msg = f"{cls.__name__} search method must have an arguments attribute."
+        raise AttributeError(msg)
+    arguments_annotation = cls.search.__annotations__.get("arguments")
+    if not issubclass(arguments_annotation, BaseSearchEngineArguments):
+        msg = (
+            f"{cls.__name__} search method arguments must be a "
+            f"subclass of BaseSearchEngineArguments."
+        )
+        raise TypeError(msg)
+    if cls.search.__annotations__.get("return") is None:
+        msg = f"{cls.__name__} search method must have a return type."
+        raise AttributeError(msg)
+    return_annotation = cls.search.__annotations__.get("return")
+    if not issubclass(return_annotation, BaseSearchResult):
+        msg = (
+            f"{cls.__name__} search method return type must be a "
+            f"subclass of BaseSearchResult."
+        )
+        raise TypeError(msg)

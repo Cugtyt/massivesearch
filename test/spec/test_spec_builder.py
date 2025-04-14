@@ -5,97 +5,67 @@ from unittest.mock import MagicMock
 
 import pytest
 import yaml
+from pydantic import BaseModel
 
-from supersearch.index import NumberIndex, TextIndex
-from supersearch.index.base import BaseIndex
-from supersearch.search_engine.base_engine import BaseSearchEngine
+from supersearch.index import (
+    bool_index_spec_builder,
+    date_index_spec_builder,
+    number_index_spec_builder,
+    text_index_spec_builder,
+    vector_index_spec_builder,
+)
+from supersearch.index.number import NumberIndex
+from supersearch.index.text import TextIndex
+from supersearch.search_engine import (
+    bool_search_engine_spec_builder,
+    date_search_engine_spec_builder,
+    number_search_engine_spec_builder,
+    text_search_engine_spec_builder,
+    vector_search_engine_spec_builder,
+)
 from supersearch.search_engine.text_engine import (
     TextSearchEngine,
-    TextSearchEngineArguments,
     TextSearchEngineConfig,
 )
-from supersearch.spec.builder import SpecBuilder
+from supersearch.spec import (
+    BaseIndex,
+    BaseSearchEngine,
+    BaseSearchEngineArguments,
+    BaseSearchEngineConfig,
+    BaseSearchResult,
+    SpecBuilder,
+    SpecUnit,
+)
 
 
 def test_spec_builder_default_init() -> None:
     """Test SpecBuilder default initialization."""
     builder = SpecBuilder()
-    if builder.index_spec != {}:
-        msg = "Expected empty index_spec on default init."
-        raise TypeError(msg)
-    if builder.search_engine_spec != {}:
-        msg = "Expected empty search_engine_spec on default init."
+    if builder.spec_units != {}:
+        msg = "Expected builder.spec_units to be an empty dictionary."
+        raise ValueError(msg)
+    if builder.registered_indexs != {}:
+        msg = "Expected builder.registered_indexs to be an empty dictionary."
+        raise ValueError(msg)
+    if builder.registered_search_engines != {}:
+        msg = "Expected builder.registered_search_engines to be an empty dictionary."
         raise ValueError(msg)
 
 
-def test_spec_builder_init_with_spec() -> None:
-    """Test SpecBuilder initialization with provided specs."""
-    mock_index = MagicMock(spec=BaseIndex)
-    mock_engine = MagicMock(spec=BaseSearchEngine)
-    builder_with_spec = SpecBuilder(
-        index_spec={"key": mock_index},
-        search_engine_spec={"key": mock_engine},
+def test_spec_builder_init_with_index_and_engine() -> None:
+    """Test SpecBuilder initialization with index and search engine."""
+    b = text_index_spec_builder | text_search_engine_spec_builder
+
+    builder = SpecBuilder(
+        indexs=b.registered_indexs,
+        search_engines=b.registered_search_engines,
     )
-    if builder_with_spec.index_spec != {"key": mock_index}:
-        msg = "index_spec not initialized correctly."
+    if len(builder.registered_indexs) != 1:
+        msg = "Expected builder.registered_indexs to contain one item."
         raise ValueError(msg)
-    if builder_with_spec.search_engine_spec != {"key": mock_engine}:
-        msg = "search_engine_spec not initialized correctly."
+    if len(builder.registered_search_engines) != 1:
+        msg = "Expected builder.registered_search_engines to contain one item."
         raise ValueError(msg)
-
-
-def test_spec_builder_init_from_file() -> None:
-    """Test SpecBuilder initialization via include method from a YAML file."""
-    spec_file_path = Path("./test/spec/test_spec.yaml")
-
-    with spec_file_path.open() as file:
-        valid_spec = yaml.safe_load(file)
-
-    builder_from_file = SpecBuilder()
-    builder_from_file.include(valid_spec)
-
-    if not builder_from_file.index_spec:
-        msg = "index_spec should be populated from file."
-        raise ValueError(msg)
-    if not builder_from_file.search_engine_spec:
-        msg = "search_engine_spec should be populated from file."
-        raise ValueError(msg)
-
-    if len(builder_from_file.index_spec) != len(valid_spec):
-        msg = (
-            f"Expected index_spec length "
-            f"({len(builder_from_file.index_spec)}) to match "
-            f"valid_spec length ({len(valid_spec)})."
-        )
-        raise ValueError(msg)
-
-    if (
-        builder_from_file.index_spec.keys()
-        != builder_from_file.search_engine_spec.keys()
-    ):
-        msg = (
-            f"index_spec keys ({builder_from_file.index_spec.keys()}) and "
-            f"search_engine_spec keys ({builder_from_file.search_engine_spec.keys()}) "
-            "should match."
-        )
-        raise ValueError(msg)
-
-    for key in valid_spec:
-        if key not in builder_from_file.index_spec:
-            msg = f"Key '{key}' from yaml missing in index_spec."
-            raise ValueError(msg)
-        if key not in builder_from_file.search_engine_spec:
-            msg = f"Key '{key}' from yaml missing in search_engine_spec."
-            raise ValueError(msg)
-        if not isinstance(builder_from_file.index_spec[key], BaseIndex):
-            msg = f"Value for key '{key}' in index_spec is not a BaseIndex instance."
-            raise TypeError(msg)
-        if not isinstance(builder_from_file.search_engine_spec[key], BaseSearchEngine):
-            msg = (
-                f"Value for key '{key}' in search_engine_spec is not a "
-                f"BaseSearchEngine instance."
-            )
-            raise TypeError(msg)
 
 
 def test_spec_builder_add() -> None:
@@ -105,115 +75,265 @@ def test_spec_builder_add() -> None:
         description="A text schema.",
         examples=["example1", "example2"],
     )
-    mock_search_engine = MagicMock()
-    builder.add("text_schema", text_index, mock_search_engine)
-    if "text_schema" not in builder.index_spec:
-        msg = "'text_schema' not found in builder.index_spec"
+    text_search_engine = TextSearchEngine(
+        config=TextSearchEngineConfig(),
+    )
+    builder.add("text_schema", text_index, text_search_engine)
+
+    if "text_schema" not in builder.spec_units:
+        msg = '"text_schema" not found in builder.spec_units'
         raise ValueError(msg)
-    if builder.index_spec["text_schema"] != text_index:
+    if builder.spec_units["text_schema"].index != text_index:
+        msg = "Expected builder.spec_units['text_schema'].index to match text_index."
+        raise ValueError(msg)
+    if builder.spec_units["text_schema"].search_engine != text_search_engine:
         msg = (
-            "The 'text_schema' in builder.index_spec does not match "
-            "the expected schema."
-        )
-        raise TypeError(msg)
-    if builder.search_engine_spec["text_schema"] != mock_search_engine:
-        msg = (
-            "The 'text_schema' in builder.search_engine_spec does not match "
-            "the expected search engine."
+            "Expected builder.spec_units['text_schema'].search_engine to match "
+            "mock_search_engine."
         )
         raise ValueError(msg)
+
+
+def test_spec_builder_include() -> None:
+    """Test SpecBuilder initialization via include method from a YAML file."""
+    spec_file_path = Path("./test/spec/test_spec.yaml")
+
+    with spec_file_path.open() as file:
+        valid_spec = yaml.safe_load(file)
+
+    builder = (
+        bool_index_spec_builder
+        | date_index_spec_builder
+        | number_index_spec_builder
+        | text_index_spec_builder
+        | vector_index_spec_builder
+        | bool_search_engine_spec_builder
+        | date_search_engine_spec_builder
+        | number_search_engine_spec_builder
+        | text_search_engine_spec_builder
+        | vector_search_engine_spec_builder
+    )
+    builder.include(valid_spec)
+
+    if len(builder.spec_units) != len(valid_spec):
+        msg = (
+            f"Expected {len(valid_spec)} spec units, but got {len(builder.spec_units)}."
+        )
+        raise ValueError(msg)
+
+    for key in valid_spec:
+        if key not in builder.spec_units:
+            msg = f"Key '{key}' not found in builder.spec_units."
+            raise KeyError(msg)
+        if not isinstance(builder.spec_units[key], SpecUnit):
+            msg = f"Expected builder.spec_units['{key}'] to be an instance of SpecUnit."
+            raise TypeError(msg)
+        if (
+            type(builder.spec_units[key].index)
+            not in builder.registered_indexs.values()
+        ):
+            msg = f"Expected builder.spec_units['{key}'].index to match mock_index."
+            raise ValueError(msg)
+        if (
+            type(builder.spec_units[key].search_engine)
+            not in builder.registered_search_engines.values()
+        ):
+            msg = (
+                f"Expected builder.spec_units['{key}'].search_engine to match "
+                f"mock_engine."
+            )
+            raise ValueError(msg)
 
 
 def test_spec_builder_build_prompt() -> None:
     """Test building a prompt with SpecBuilder."""
-    builder = SpecBuilder()
-    text_index = TextIndex(
-        description="A text schema.",
-        examples=["example1", "example2"],
-    )
-    mock_search_engine = MagicMock()
-    mock_search_engine.model_fields = {"arguments": MagicMock(annotation=int)}
-    builder.add("text_schema", text_index, mock_search_engine)
-    prompt = builder.build_prompt("What is the schema?")
-    prompt_expected_length = 2
+    spec_file_path = Path("./test/spec/test_spec.yaml")
 
-    if len(prompt) != prompt_expected_length:
-        msg = (
-            f"Expected prompt length to be {prompt_expected_length}, "
-            f"but got {len(prompt)}."
+    with spec_file_path.open() as file:
+        valid_spec = yaml.safe_load(file)
+
+    builder = (
+        bool_index_spec_builder
+        | date_index_spec_builder
+        | number_index_spec_builder
+        | text_index_spec_builder
+        | vector_index_spec_builder
+        | bool_search_engine_spec_builder
+        | date_search_engine_spec_builder
+        | number_search_engine_spec_builder
+        | text_search_engine_spec_builder
+        | vector_search_engine_spec_builder
+    )
+    builder.include(valid_spec)
+    prompt = builder.build_prompt()
+
+    if "Fill the search engine query arguments" not in prompt:
+        msg = "Expected 'Fill the search engine query arguments' to be in the prompt."
+        raise ValueError(
+            msg,
         )
-        raise ValueError(msg)
-    if prompt[0]["role"] != "system":
-        msg = f"Expected first prompt role to be 'system', but got {prompt[0]['role']}."
-        raise ValueError(msg)
-    if "A text schema." not in prompt[0]["content"]:
-        msg = "Expected 'A text schema.' to be in the first prompt content."
-        raise ValueError(msg)
-    if prompt[1]["role"] != "user":
-        msg = f"Expected second prompt role to be 'user', but got {prompt[1]['role']}."
-        raise ValueError(msg)
-    if prompt[1]["content"] != "What is the schema?":
-        msg = (
-            "Expected second prompt content to be 'What is the schema?', "
-            f"but got {prompt[1]['content']}."
-        )
+    if "high-performance laptop" not in prompt:
+        msg = "Expected 'high-performance laptop' to be in the prompt."
         raise ValueError(msg)
 
 
 def test_spec_builder_build_format() -> None:
     """Test building a format with SpecBuilder."""
-    builder = SpecBuilder()
-    number_index = NumberIndex(
-        description="A number schema.",
-        range={"min": 0, "max": 100},
-        examples=[10, 20, 30],
+    builder = (
+        bool_index_spec_builder
+        | date_index_spec_builder
+        | number_index_spec_builder
+        | text_index_spec_builder
+        | vector_index_spec_builder
+        | bool_search_engine_spec_builder
+        | date_search_engine_spec_builder
+        | number_search_engine_spec_builder
+        | text_search_engine_spec_builder
+        | vector_search_engine_spec_builder
     )
-    search_engine = TextSearchEngine(
-        config=TextSearchEngineConfig(),
-    )
-    builder.add("number_schema", number_index, search_engine)
+    spec_file_path = Path("./test/spec/test_spec.yaml")
+
+    with spec_file_path.open() as file:
+        valid_spec = yaml.safe_load(file)
+
+    builder.include(valid_spec)
+
     format_model = builder.build_format()
-    if "queries" not in format_model.model_fields:
-        msg = "The model does not have the expected schema."
-        raise ValueError(msg)
-    query_list_type = format_model.model_fields["queries"].annotation
-    if (
-        not hasattr(query_list_type, "__origin__")
-        and query_list_type.__origin__ is not list
-    ):
-        msg = "The queries field is not a list."
+
+    if not issubclass(format_model, BaseModel):
+        msg = "Expected format_model to be a subclass of Pydantic BaseModel."
         raise TypeError(msg)
-    if "number_schema" not in query_list_type.__args__[0].model_fields:
-        msg = "The queries field does not contain the expected schema."
+
+    if format_model.__name__ != "MultiQueryFormat":
+        msg = "Expected format_model name to be 'MultiQueryFormat'."
         raise ValueError(msg)
+
+    if (
+        len(format_model.model_fields) == 1
+        and "queries" not in format_model.model_fields
+    ):
+        msg = "Expected format_model to have 'queries' field."
+        raise AttributeError(msg)
+
+    if (
+        format_model.model_fields["queries"].annotation.__name__ != "list"
+        and format_model.model_fields["queries"].annotation.__args__[0].__name__
+        != "SingleQueryFormat"
+    ):
+        msg = "Expected format_model.queries type is list[SingleQueryFormat]."
+        raise TypeError(msg)
+
+
+def test_spec_builder_register_index() -> None:
+    """Test registering an index using the decorator."""
+    builder = SpecBuilder()
+
+    @builder.index("test_index")
+    class TestIndex(BaseIndex):
+        pass
+
+    if "test_index" not in builder.registered_indexs:
+        msg = "'test_index' not found in builder.registered_indexs"
+        raise KeyError(msg)
+    if builder.registered_indexs["test_index"] != TestIndex:
+        msg = "Expected builder.registered_indexs['test_index'] to be TestIndex"
+        raise ValueError(
+            msg,
+        )
+
+
+def test_spec_builder_register_search_engine() -> None:
+    """Test registering a search engine using the decorator."""
+    builder = SpecBuilder()
+
+    class TestSearchEngineConfig(BaseSearchEngineConfig):
+        pass
+
+    class TestSearchEngineArguments(BaseSearchEngineArguments):
+        pass
+
+    @builder.search_engine("test_engine")
+    class TestSearchEngine(BaseSearchEngine):
+        config: TextSearchEngineConfig
+
+        def search(self, arguments: TestSearchEngineArguments) -> BaseSearchResult:
+            return MagicMock(spec=BaseSearchResult)
+
+    if "test_engine" not in builder.registered_search_engines:
+        msg = "'test_engine' not found in builder.registered_search_engines"
+        raise KeyError(msg)
+    if builder.registered_search_engines["test_engine"] != TestSearchEngine:
+        msg = (
+            "Expected builder.registered_search_engines['test_engine'] to be "
+            "TestSearchEngine"
+        )
+        raise ValueError(
+            msg,
+        )
+
+
+def test_spec_builder_or_operator() -> None:
+    """Test combining two SpecBuilders using the | operator."""
+    builder1 = SpecBuilder()
+    builder2 = SpecBuilder()
+
+    text_index = TextIndex(description="Text schema", examples=["example"])
+    number_index = NumberIndex(
+        description="Number schema",
+        range={"min": 0, "max": 100},
+        examples=[10],
+    )
+    mock_engine1 = MagicMock(spec=BaseSearchEngine)
+    mock_engine2 = MagicMock(spec=BaseSearchEngine)
+
+    builder1.add("text_schema", text_index, mock_engine1)
+    builder2.add("number_schema", number_index, mock_engine2)
+
+    combined = builder1 | builder2
+
+    if "text_schema" not in combined.spec_units:
+        msg = "'text_schema' not found in combined.spec_units"
+        raise KeyError(msg)
+    if "number_schema" not in combined.spec_units:
+        msg = "'number_schema' not found in combined.spec_units"
+        raise KeyError(msg)
+    if combined.spec_units["text_schema"].index != text_index:
+        msg = "Expected combined.spec_units['text_schema'].index to match text_index"
+        raise ValueError(
+            msg,
+        )
+    if combined.spec_units["number_schema"].index != number_index:
+        msg = (
+            "Expected combined.spec_units['number_schema'].index to match number_index"
+        )
+        raise ValueError(
+            msg,
+        )
+
+
+def test_spec_builder_or_operator_with_overlaps() -> None:
+    """Test that combining SpecBuilders with overlapping keys raises an error."""
+    builder1 = SpecBuilder()
+    builder2 = SpecBuilder()
+
+    # Add the same key to both builders
+    mock_index = MagicMock(spec=BaseIndex)
+    mock_engine = MagicMock(spec=BaseSearchEngine)
+
+    builder1.add("same_key", mock_index, mock_engine)
+    builder2.add("same_key", mock_index, mock_engine)
+
+    # Combining should raise an error
+    with pytest.raises(ValueError, match="overlapping spec_units"):
+        _ = builder1 | builder2
 
 
 def test_spec_builder_empty_spec_error() -> None:
     """Test error when SpecBuilder has no schemas."""
     builder = SpecBuilder()
-    with pytest.raises(ValueError, match="No schemas available to build a prompt."):
-        builder.build_prompt("Test query")
+
     with pytest.raises(
         ValueError,
-        match="No search engine schemas available to build a format.",
+        match="No schemas available to build a prompt.",
     ):
-        builder.build_format()
-    with pytest.raises(ValueError, match="No schemas available to query."):
-        builder.query("Test query")
-
-
-def test_spec_builder_empty_query_error() -> None:
-    """Test error when query string is empty."""
-    builder = SpecBuilder()
-    text_index = TextIndex(
-        description="A text schema.",
-        examples=["example1", "example2"],
-    )
-    text_search_engine = TextSearchEngine(
-        config=TextSearchEngineConfig(),
-        arguments=TextSearchEngineArguments(keywords=["example"]),
-    )
-
-    builder.add("text_schema", text_index, text_search_engine)
-    with pytest.raises(ValueError, match="Query string cannot be empty."):
-        builder.query("")
+        builder.build_prompt()

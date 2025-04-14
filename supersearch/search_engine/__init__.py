@@ -1,47 +1,25 @@
 """Search Engine Module."""
 
-from supersearch.search_engine.base_engine import (
-    BaseSearchEngine,
-    BaseSearchEngineConfig,
-)
 from supersearch.search_engine.bool_engine import (
-    BoolSearchEngine,
-    BoolSearchEngineConfig,
+    spec_builder as bool_search_engine_spec_builder,
 )
 from supersearch.search_engine.date_engine import (
-    DateSearchEngine,
-    DateSearchEngineConfig,
-)
-from supersearch.search_engine.hub import (
-    SearchEngineRegisterError,
-    registered_search_engines,
+    spec_builder as date_search_engine_spec_builder,
 )
 from supersearch.search_engine.number_engine import (
-    NumberSearchEngine,
-    NumberSearchEngineConfig,
+    spec_builder as number_search_engine_spec_builder,
 )
 from supersearch.search_engine.text_engine import (
-    TextSearchEngine,
-    TextSearchEngineConfig,
+    spec_builder as text_search_engine_spec_builder,
 )
 from supersearch.search_engine.vector_engine import (
-    VectorSearchEngine,
-    VectorSearchEngineConfig,
+    spec_builder as vector_search_engine_spec_builder,
 )
 
 __all__ = [
-    "BaseSearchEngine",
-    "BaseSearchEngineConfig",
-    "BoolSearchEngine",
-    "BoolSearchEngineConfig",
-    "DateSearchEngine",
-    "DateSearchEngineConfig",
-    "NumberSearchEngine",
-    "NumberSearchEngineConfig",
-    "SearchEngineRegisterError",
-    "TextSearchEngine",
-    "TextSearchEngineConfig",
-    "VectorSearchEngine",
-    "VectorSearchEngineConfig",
-    "registered_search_engines",
+    "bool_search_engine_spec_builder",
+    "date_search_engine_spec_builder",
+    "number_search_engine_spec_builder",
+    "text_search_engine_spec_builder",
+    "vector_search_engine_spec_builder",
 ]

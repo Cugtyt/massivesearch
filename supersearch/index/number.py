@@ -2,8 +2,9 @@
 
 from pydantic import BaseModel
 
-from supersearch.index.base import BaseIndex
-from supersearch.index.hub import index
+from supersearch.spec import BaseIndex, SpecBuilder
+
+spec_builder = SpecBuilder()
 
 
 class NumberRange(BaseModel):
@@ -13,14 +14,14 @@ class NumberRange(BaseModel):
     max: float
 
 
-@index("number_index")
+@spec_builder.index("number_index")
 class NumberIndex(BaseIndex):
     """Schema for number index."""
 
     range: NumberRange
     examples: list[float]
 
-    def schema_prompt(self, index_name: str) -> str:
+    def prompt(self, index_name: str) -> str:
         """Return the prompt for the index schema."""
         return "\n".join(
             [

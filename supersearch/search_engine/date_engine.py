@@ -5,13 +5,15 @@ from typing import Self
 
 from pydantic import BaseModel, Field, model_validator
 
-from supersearch.search_engine.base_engine import (
+from supersearch.spec import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
     BaseSearchResult,
+    SpecBuilder,
 )
-from supersearch.search_engine.hub import search_engine
+
+spec_builder = SpecBuilder()
 
 
 class DateSearchEngineConfig(BaseSearchEngineConfig):
@@ -66,7 +68,7 @@ class DateSearchResult(BaseSearchResult):
     """Result of date search."""
 
 
-@search_engine("date_search")
+@spec_builder.search_engine("date_search")
 class DateSearchEngine(BaseSearchEngine):
     """date search engine."""
 

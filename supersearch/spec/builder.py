@@ -4,12 +4,10 @@ from inspect import signature
 
 from pydantic import BaseModel, create_model
 
-from supersearch.index import registered_indexs
-from supersearch.index.base import BaseIndex
-from supersearch.search_engine import registered_search_engines
-from supersearch.search_engine.base_engine import BaseSearchEngine
-from supersearch.spec.spec import Spec
-from supersearch.spec.validator import spec_validator
+from supersearch.spec.base_index import BaseIndex
+from supersearch.spec.base_search_engine import BaseSearchEngine
+from supersearch.spec.spec import Spec, SpecUnit
+from supersearch.spec.validator import spec_validator, validate_search_engine
 
 STSTEM_PROMPT_TEMPLATE = """Fill the search engine query arguments
 based on the user's intent and current index information.
@@ -50,15 +48,18 @@ class SpecBuilder:
 
     def __init__(
         self,
-        index_spec: dict[str, BaseIndex] | None = None,
-        search_engine_spec: dict[str, BaseSearchEngine] | None = None,
+        indexs: dict[str, type[BaseIndex]] | None = None,
+        search_engines: dict[str, type[BaseSearchEngine]] | None = None,
     ) -> None:
         """Initialize the SpecBuilder with an empty specification."""
-        self.index_spec: dict[str, BaseIndex] = index_spec or {}
-        self.search_engine_spec: dict[str, BaseSearchEngine] = search_engine_spec or {}
-        if self.index_spec.keys() != self.search_engine_spec.keys():
-            msg = "Index spec and search engine spec keys do not match."
-            raise ValueError(msg)
+        self.spec_units: dict[str, SpecUnit] = {}
+        self.registered_indexs: dict[str, type[BaseIndex]] = {}
+        self.registered_search_engines: dict[str, type[BaseSearchEngine]] = {}
+
+        for name, index in (indexs or {}).items():
+            self.index(name)(index)
+        for name, search_engine in (search_engines or {}).items():
+            self.search_engine(name)(search_engine)
 
     def include(self, spec: dict) -> None:
         """Include a dictionary of schemas to the spec."""
@@ -66,7 +67,7 @@ class SpecBuilder:
             msg = "No schemas available to include."
             raise ValueError(msg)
 
-        spec_validator(spec)
+        spec_validator(spec, self.registered_indexs, self.registered_search_engines)
 
         for name, schema in spec.items():
             index_schema = schema.get("index")
@@ -75,8 +76,8 @@ class SpecBuilder:
             search_engine_type = search_engine.get("type")
             self.add(
                 name,
-                registered_indexs[index_type](**index_schema),
-                registered_search_engines[search_engine_type](**search_engine),
+                self.registered_indexs[index_type](**index_schema),
+                self.registered_search_engines[search_engine_type](**search_engine),
             )
 
     def add(
@@ -85,18 +86,31 @@ class SpecBuilder:
         index: BaseIndex,
         search_engine: BaseSearchEngine,
     ) -> None:
-        """Add a schema to the spec."""
-        self.index_spec[name] = index
-        self.search_engine_spec[name] = search_engine
+        """Add a new index and search engine to the spec."""
+        if not name:
+            msg = "Name cannot be empty."
+            raise ValueError(msg)
+        if not index:
+            msg = "Index cannot be empty."
+            raise ValueError(msg)
+        if not search_engine:
+            msg = "Search engine cannot be empty."
+            raise ValueError(msg)
+
+        if name in self.spec_units:
+            msg = f"Spec with name '{name}' already exists."
+            raise ValueError(msg)
+
+        self.spec_units[name] = SpecUnit(index=index, search_engine=search_engine)
 
     def build_prompt(self) -> str:
         """Build the prompt for the spec."""
-        if not self.index_spec:
+        if not self.spec_units:
             msg = "No schemas available to build a prompt."
             raise ValueError(msg)
 
         index_context = "\n".join(
-            schema.schema_prompt(name) for name, schema in self.index_spec.items()
+            spec_unit.index.prompt(name) for name, spec_unit in self.spec_units.items()
         )
         return STSTEM_PROMPT_TEMPLATE.format(context=index_context)
 
@@ -119,14 +133,15 @@ class SpecBuilder:
 
     def build_format(self) -> type[BaseModel]:
         """Format the search engine arguments format."""
-        if not self.search_engine_spec:
-            msg = "No search engine schemas available to build a format."
+        if not self.spec_units or not self.registered_search_engines:
+            msg = "No spec units or search engines available to build format."
             raise ValueError(msg)
 
         fields = {}
-        for name, search_engine in self.search_engine_spec.items():
-            arguments_type = self._get_arguments_type(search_engine)
-            fields[name] = arguments_type
+        for name, spec_unit in self.spec_units.items():
+            arguments_type = self._get_arguments_type(spec_unit.search_engine)
+
+            fields[name] = (arguments_type, ...)
 
         single_query_format = create_model("SingleQueryFormat", **fields)
         return create_model(
@@ -137,15 +152,82 @@ class SpecBuilder:
     @property
     def spec(self) -> Spec:
         """Return the spec."""
-        if not self.index_spec:
-            msg = "No schemas available to build the spec."
-            raise ValueError(msg)
-        if not self.search_engine_spec:
-            msg = "No search engine schemas available to build the spec."
-            raise ValueError(msg)
         return Spec(
-            index_spec=self.index_spec,
-            search_engine_spec=self.search_engine_spec,
+            items=self.spec_units,
             prompt_message=self.build_prompt(),
             format_model=self.build_format(),
         )
+
+    def index(self, name: str) -> type[BaseIndex]:
+        """Register a index with a given key name."""
+
+        def decorator(cls: type[BaseIndex]) -> type[BaseIndex]:
+            if name in self.registered_indexs:
+                msg = f"Index with name '{name}' is already registered."
+                raise ValueError(msg)
+            self.registered_indexs[name] = cls
+
+            return cls
+
+        return decorator
+
+    def search_engine(self, name: str) -> type[BaseSearchEngine]:
+        """Register a search engine with a given key name."""
+
+        def decorator(cls: type[BaseSearchEngine]) -> type:
+            if name in self.registered_search_engines:
+                msg = f"Search engine with name '{name}' is already registered."
+                raise ValueError(msg)
+            validate_search_engine(cls)
+            self.registered_search_engines[name] = cls
+            return cls
+
+        return decorator
+
+    def __or__(self, other: "SpecBuilder") -> "SpecBuilder":
+        """Combine two SpecBuilders using the | operator."""
+        if not isinstance(other, SpecBuilder):
+            msg = f"Cannot combine SpecBuilder with {type(other)}."
+            raise TypeError(msg)
+
+        overlap_spec_units = set(self.spec_units.keys()) & set(other.spec_units.keys())
+        if overlap_spec_units:
+            msg = f"SpecBuilder has overlapping spec_units: {overlap_spec_units}."
+            raise ValueError(msg)
+
+        overlap_registered_indexs = set(self.registered_indexs.keys()) & set(
+            other.registered_indexs.keys(),
+        )
+        if overlap_registered_indexs:
+            msg = (
+                f"SpecBuilder has overlapping registered_indexs: "
+                f"{overlap_registered_indexs}."
+            )
+            raise ValueError(msg)
+
+        overlap_registered_search_engines = set(
+            self.registered_search_engines.keys(),
+        ) & set(other.registered_search_engines.keys())
+        if overlap_registered_search_engines:
+            msg = (
+                "SpecBuilder has overlapping registered_search_engines: "
+                f"{overlap_registered_search_engines}."
+            )
+            raise ValueError(msg)
+
+        combined_spec_units = {**self.spec_units, **other.spec_units}
+        combined_registered_indexs = {
+            **self.registered_indexs,
+            **other.registered_indexs,
+        }
+        combined_registered_search_engines = {
+            **self.registered_search_engines,
+            **other.registered_search_engines,
+        }
+        combined_spec_builder = SpecBuilder()
+        combined_spec_builder.spec_units = combined_spec_units
+        combined_spec_builder.registered_indexs = combined_registered_indexs
+        combined_spec_builder.registered_search_engines = (
+            combined_registered_search_engines
+        )
+        return combined_spec_builder

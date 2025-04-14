@@ -1,9 +1,9 @@
 """Vector Index Schema."""
 
-from supersearch.index.base import BaseIndex
-from supersearch.index.hub import index
+from supersearch.spec import BaseIndex, SpecBuilder
 
+spec_builder = SpecBuilder()
 
-@index("vector_index")
+@spec_builder.index("vector_index")
 class VectorIndex(BaseIndex):
     """Schema for vector index."""

@@ -2,15 +2,20 @@
 
 from pydantic import BaseModel
 
-from supersearch.index.base import BaseIndex
-from supersearch.search_engine.base_engine import BaseSearchEngine
+from supersearch.spec.base_index import BaseIndex
+from supersearch.spec.base_search_engine import BaseSearchEngine
 
+
+class SpecUnit(BaseModel):
+    """Spec unit class."""
+
+    index: BaseIndex
+    search_engine: BaseSearchEngine
 
 class Spec(BaseModel):
     """Spec class."""
 
-    index_spec: dict[str, BaseIndex]
-    search_engine_spec: dict[str, BaseSearchEngine]
+    items: dict[str, SpecUnit]
 
     prompt_message: str
     format_model: type[BaseModel]

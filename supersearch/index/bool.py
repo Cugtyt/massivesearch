@@ -1,9 +1,9 @@
 """Boolean Index Schema."""
 
-from supersearch.index.base import BaseIndex
-from supersearch.index.hub import index
+from supersearch.spec import BaseIndex, SpecBuilder
 
+spec_builder = SpecBuilder()
 
-@index("boolean_index")
+@spec_builder.index("boolean_index")
 class BoolIndex(BaseIndex):
     """Schema for boolean index."""

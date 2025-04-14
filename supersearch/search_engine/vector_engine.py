@@ -2,13 +2,15 @@
 
 from pydantic import Field
 
-from supersearch.search_engine.base_engine import (
+from supersearch.spec.base_search_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
     BaseSearchResult,
 )
-from supersearch.search_engine.hub import search_engine
+from supersearch.spec.builder import SpecBuilder
+
+spec_builder = SpecBuilder()
 
 
 class VectorSearchEngineConfig(BaseSearchEngineConfig):
@@ -36,7 +38,7 @@ class VectorSearchResult(BaseSearchResult):
     """Result of vector search."""
 
 
-@search_engine("vector_search")
+@spec_builder.search_engine("vector_search")
 class VectorSearchEngine(BaseSearchEngine):
     """Vector search engine."""
 

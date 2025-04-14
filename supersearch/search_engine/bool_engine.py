@@ -4,13 +4,15 @@ from typing import Self
 
 from pydantic import Field, model_validator
 
-from supersearch.search_engine.base_engine import (
+from supersearch.spec import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
     BaseSearchResult,
+    SpecBuilder,
 )
-from supersearch.search_engine.hub import search_engine
+
+spec_builder = SpecBuilder()
 
 
 class BoolSearchEngineConfig(BaseSearchEngineConfig):
@@ -49,7 +51,7 @@ class BoolSearchResult(BaseSearchResult):
     """Result of boolean search."""
 
 
-@search_engine("boolean_search")
+@spec_builder.search_engine("boolean_search")
 class BoolSearchEngine(BaseSearchEngine):
     """Boolean search engine."""
 
