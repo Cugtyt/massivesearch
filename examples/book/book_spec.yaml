@@ -1,0 +1,38 @@
+title:
+  index:
+    type: text_index
+    description: The title of the book.
+    examples:
+      - "The Great Gatsby"
+      - "To Kill a Mockingbird"
+  search_engine:
+    type: book_text_search
+    config:
+      matching_strategy: "contains"
+      column_name: title
+description:
+  index:
+    type: text_index
+    description: A detailed description of the book.
+    examples:
+      - "A novel set in the Roaring Twenties."
+      - "A story about racial injustice in the Deep South."
+  search_engine:
+    type: book_text_search
+    config:
+      matching_strategy: "contains"
+      column_name: description
+price:
+  index:
+    type: number_index
+    description: The price of the book.
+    range:
+      min: 0
+      max: 1000
+    examples:
+      - 19.99
+      - 29.99
+  search_engine:
+    type: book_price_search
+    config:
+      column_name: price
