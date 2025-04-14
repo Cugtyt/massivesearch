@@ -2,8 +2,8 @@
 
 from pydantic import ValidationError
 
-from supersearch.spec.base_index import BaseIndex
-from supersearch.spec.base_search_engine import (
+from massivesearch.spec.base_index import BaseIndex
+from massivesearch.spec.base_search_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
@@ -35,6 +35,7 @@ class SpecValidationError(Exception):
         super().__init__(
             f"Spec validation errors: {errors}",
         )
+
 
 def spec_validator(
     spec: dict,
@@ -82,7 +83,6 @@ def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
     """Validate the search engine class."""
     _validate_config(cls)
     _validate_search_method(cls)
-
 
 
 def _validate_config(cls: type[BaseSearchEngine]) -> None:

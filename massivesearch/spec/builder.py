@@ -1,13 +1,13 @@
-"""Spec builder for supersearch."""
+"""Spec builder for massivesearch."""
 
 from inspect import signature
 
 from pydantic import BaseModel, create_model
 
-from supersearch.spec.base_index import BaseIndex
-from supersearch.spec.base_search_engine import BaseSearchEngine
-from supersearch.spec.spec import Spec, SpecUnit
-from supersearch.spec.validator import spec_validator, validate_search_engine
+from massivesearch.spec.base_index import BaseIndex
+from massivesearch.spec.base_search_engine import BaseSearchEngine
+from massivesearch.spec.spec import Spec, SpecUnit
+from massivesearch.spec.validator import spec_validator, validate_search_engine
 
 STSTEM_PROMPT_TEMPLATE = """Fill the search engine query arguments
 based on the user's intent and current index information.

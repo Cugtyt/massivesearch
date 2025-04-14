@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from supersearch.spec import BaseIndex, SpecBuilder
+from massivesearch.spec import BaseIndex, SpecBuilder
 
 spec_builder = SpecBuilder()
 

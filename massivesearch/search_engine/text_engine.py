@@ -4,13 +4,13 @@ from typing import Literal
 
 from pydantic import Field
 
-from supersearch.spec.base_search_engine import (
+from massivesearch.spec.base_search_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
     BaseSearchResult,
 )
-from supersearch.spec.builder import SpecBuilder
+from massivesearch.spec.builder import SpecBuilder
 
 spec_builder = SpecBuilder()
 

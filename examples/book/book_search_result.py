@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from supersearch.spec.base_search_engine import BaseSearchResult
+from massivesearch.spec.base_search_engine import BaseSearchResult
 
 
 @dataclass

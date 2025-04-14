@@ -1,5 +1,6 @@
 """Book search example."""  # noqa: INP001
 
+import logging
 from pathlib import Path
 
 import yaml
@@ -10,12 +11,16 @@ from book_text_search_engine import (
     book_builder as book_text_search_builder,
 )
 
-from supersearch.index import number_index_spec_builder, text_index_spec_builder
-from supersearch.model.azure_openai import AzureOpenAIClient
-from supersearch.worker import Worker
+from massivesearch.index import number_index_spec_builder, text_index_spec_builder
+from massivesearch.model.azure_openai import AzureOpenAIClient
+from massivesearch.worker import Worker
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-def main():
+def main() -> None:
+    """Run the book search example."""
     book_builder = (
         book_text_search_builder
         | book_price_search_builder
@@ -35,15 +40,15 @@ def main():
     )
 
     for execute_result in execute_results:
-        print(f"Query: {execute_result.query}")
-        print()
+        logger.info("Query: %s", execute_result.query)
+        logger.info("")
 
         for name, result in execute_result.result.items():
-            print("Searching for:", name)
-            print("Result:")
-            print(result.result)
+            logger.info("Searching for: %s", name)
+            logger.info("Result:")
+            logger.info(result.result)
 
-            print("-" * 80)
+            logger.info("-" * 80)
 
 
 if __name__ == "__main__":

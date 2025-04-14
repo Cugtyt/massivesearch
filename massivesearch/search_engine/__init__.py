@@ -1,18 +1,18 @@
 """Search Engine Module."""
 
-from supersearch.search_engine.bool_engine import (
+from massivesearch.search_engine.bool_engine import (
     spec_builder as bool_search_engine_spec_builder,
 )
-from supersearch.search_engine.date_engine import (
+from massivesearch.search_engine.date_engine import (
     spec_builder as date_search_engine_spec_builder,
 )
-from supersearch.search_engine.number_engine import (
+from massivesearch.search_engine.number_engine import (
     spec_builder as number_search_engine_spec_builder,
 )
-from supersearch.search_engine.text_engine import (
+from massivesearch.search_engine.text_engine import (
     spec_builder as text_search_engine_spec_builder,
 )
-from supersearch.search_engine.vector_engine import (
+from massivesearch.search_engine.vector_engine import (
     spec_builder as vector_search_engine_spec_builder,
 )
 

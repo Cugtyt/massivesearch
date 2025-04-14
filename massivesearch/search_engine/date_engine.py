@@ -5,7 +5,7 @@ from typing import Self
 
 from pydantic import BaseModel, Field, model_validator
 
-from supersearch.spec import (
+from massivesearch.spec import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,

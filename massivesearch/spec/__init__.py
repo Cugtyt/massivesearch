@@ -1,15 +1,15 @@
 """Spec module."""
 
-from supersearch.spec.base_index import BaseIndex
-from supersearch.spec.base_search_engine import (
+from massivesearch.spec.base_index import BaseIndex
+from massivesearch.spec.base_search_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
     BaseSearchResult,
 )
-from supersearch.spec.builder import SpecBuilder
-from supersearch.spec.spec import Spec, SpecUnit
-from supersearch.spec.validator import (
+from massivesearch.spec.builder import SpecBuilder
+from massivesearch.spec.spec import Spec, SpecUnit
+from massivesearch.spec.validator import (
     SpecIndexTypeError,
     SpecSearchEngineError,
     SpecValidationError,

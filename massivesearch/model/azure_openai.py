@@ -6,7 +6,7 @@ from typing import Self
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
 
-from supersearch.model.base import BaseModelClient
+from massivesearch.model.base import BaseModelClient
 
 
 class AzureOpenAIClient(BaseModelClient):

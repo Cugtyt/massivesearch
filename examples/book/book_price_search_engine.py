@@ -6,11 +6,11 @@ from functools import reduce
 import pandas as pd
 from book_search_result import BookSearchResult
 
-from supersearch.search_engine.number_engine import (
+from massivesearch.search_engine.number_engine import (
     NumberSearchEngine,
     NumberSearchEngineArguments,
 )
-from supersearch.spec import BaseSearchEngineConfig, SpecBuilder
+from massivesearch.spec import BaseSearchEngineConfig, SpecBuilder
 
 book_builder = SpecBuilder()
 

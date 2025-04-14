@@ -4,9 +4,9 @@ from dataclasses import dataclass
 
 from pydantic import ValidationError
 
-from supersearch.model.base import BaseModelClient
-from supersearch.spec import Spec
-from supersearch.spec.base_search_engine import BaseSearchResult
+from massivesearch.model.base import BaseModelClient
+from massivesearch.spec import Spec
+from massivesearch.spec.base_search_engine import BaseSearchResult
 
 
 @dataclass
