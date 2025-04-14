@@ -41,7 +41,10 @@ class PandasBoolSearchEngineArguments(BaseSearchEngineArguments):
 class BoolSearchEngine(PandasBaseSearchEngine):
     """Boolean search engine."""
 
-    def search(self, arguments: PandasBoolSearchEngineArguments) -> PandasSearchResultIndex:
+    def search(
+        self,
+        arguments: PandasBoolSearchEngineArguments,
+    ) -> PandasSearchResultIndex:
         """Search for boolean values."""
         data = self.load_df()
         data_series = data[self.config.column_name]
