@@ -43,7 +43,7 @@ def main() -> None:
     aggregator = BookAggregator()
     agg_result = aggregator.aggregate(execute_results)
     logger.info("Books:")
-    logger.info(agg_result.books)
+    logger.info(agg_result)
 
 
 if __name__ == "__main__":

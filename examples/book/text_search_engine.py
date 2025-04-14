@@ -29,8 +29,7 @@ class BookTextSearch(TextSearchEngine):
     def search(self, arguments: TextSearchEngineArguments) -> BookSearchResult:
         """Search for book text values."""
         book_df = pd.read_csv(self.config.file_path)
-        book_df = book_df[self.config.column_name]
-        book_series_lower = book_df.str.lower()
+        book_series_lower = book_df[self.config.column_name].str.lower()
         keywords_lower = [keyword.lower() for keyword in arguments.keywords]
         match self.config.matching_strategy:
             case "exact":
