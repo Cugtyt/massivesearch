@@ -5,7 +5,7 @@ from massivesearch.spec.base_search_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
-    BaseSearchResult,
+    BaseSearchResultIndex,
 )
 from massivesearch.spec.builder import SpecBuilder
 from massivesearch.spec.spec import Spec, SpecUnit
@@ -21,7 +21,7 @@ __all__ = [
     "BaseSearchEngine",
     "BaseSearchEngineArguments",
     "BaseSearchEngineConfig",
-    "BaseSearchResult",
+    "BaseSearchResultIndex",
     "Spec",
     "SpecBuilder",
     "SpecIndexTypeError",

@@ -6,7 +6,7 @@ from pydantic import ValidationError
 
 from massivesearch.model.base import BaseModelClient
 from massivesearch.spec import Spec
-from massivesearch.spec.base_search_engine import BaseSearchResult
+from massivesearch.spec.base_search_engine import BaseSearchResultIndex
 
 
 @dataclass
@@ -14,7 +14,7 @@ class WorkerExecuteResult:
     """Worker execute result."""
 
     query: dict
-    result: dict[str, BaseSearchResult]
+    result: dict[str, BaseSearchResultIndex]
 
 
 class Worker:

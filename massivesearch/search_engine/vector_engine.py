@@ -6,7 +6,7 @@ from massivesearch.spec.base_search_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
-    BaseSearchResult,
+    BaseSearchResultIndex,
 )
 from massivesearch.spec.builder import SpecBuilder
 
@@ -40,7 +40,7 @@ class VectorSearchEngine(BaseSearchEngine):
 
     config: VectorSearchEngineConfig
 
-    def search(self, arguments: VectorSearchEngineArguments) -> BaseSearchResult:
+    def search(self, arguments: VectorSearchEngineArguments) -> BaseSearchResultIndex:
         """Search for vector values."""
         msg = "Vector search engine is not implemented yet."
         raise NotImplementedError(msg)

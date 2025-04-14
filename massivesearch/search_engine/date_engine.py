@@ -9,7 +9,7 @@ from massivesearch.spec import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
-    BaseSearchResult,
+    BaseSearchResultIndex,
     SpecBuilder,
 )
 
@@ -70,7 +70,7 @@ class DateSearchEngine(BaseSearchEngine):
 
     config: DateSearchEngineConfig
 
-    def search(self, arguments: DateSearchEngineArguments) -> BaseSearchResult:
+    def search(self, arguments: DateSearchEngineArguments) -> BaseSearchResultIndex:
         """Search for date values."""
         msg = "Date search engine is not implemented yet."
         raise NotImplementedError(msg)

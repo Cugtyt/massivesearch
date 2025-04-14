@@ -13,7 +13,7 @@ class BaseSearchEngineArguments(BaseModel):
     """Arguments for search engines."""
 
 
-class BaseSearchResult:
+class BaseSearchResultIndex:
     """Base class for search results."""
 
 
@@ -23,5 +23,5 @@ class BaseSearchEngine(BaseModel):
     config: BaseSearchEngineConfig
 
     @abstractmethod
-    def search(self, arguments: BaseSearchEngineArguments) -> BaseSearchResult:
+    def search(self, arguments: BaseSearchEngineArguments) -> BaseSearchResultIndex:
         """Search for the given arguments."""

@@ -8,7 +8,7 @@ from massivesearch.spec import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
-    BaseSearchResult,
+    BaseSearchResultIndex,
     SpecBuilder,
 )
 
@@ -53,7 +53,7 @@ class BoolSearchEngine(BaseSearchEngine):
 
     config: BoolSearchEngineConfig
 
-    def search(self, arguments: BoolSearchEngineArguments) -> BaseSearchResult:
+    def search(self, arguments: BoolSearchEngineArguments) -> BaseSearchResultIndex:
         """Search for boolean values."""
         msg = "Boolean search engine is not implemented yet."
         raise NotImplementedError(msg)

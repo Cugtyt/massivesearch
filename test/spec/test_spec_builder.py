@@ -23,6 +23,10 @@ from massivesearch.search_engine import (
     text_search_engine_spec_builder,
     vector_search_engine_spec_builder,
 )
+from massivesearch.search_engine.number_engine import (
+    NumberSearchEngine,
+    NumberSearchEngineConfig,
+)
 from massivesearch.search_engine.text_engine import (
     TextSearchEngine,
     TextSearchEngineConfig,
@@ -32,7 +36,7 @@ from massivesearch.spec import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
-    BaseSearchResult,
+    BaseSearchResultIndex,
     SpecBuilder,
     SpecUnit,
 )
@@ -256,8 +260,8 @@ def test_spec_builder_register_search_engine() -> None:
     class TestSearchEngine(BaseSearchEngine):
         config: TextSearchEngineConfig
 
-        def search(self, arguments: TestSearchEngineArguments) -> BaseSearchResult:  # noqa: ARG002
-            return MagicMock(spec=BaseSearchResult)
+        def search(self, arguments: TestSearchEngineArguments) -> BaseSearchResultIndex:  # noqa: ARG002
+            return MagicMock(spec=BaseSearchResultIndex)
 
     if "test_engine" not in builder.registered_search_engines:
         msg = "'test_engine' not found in builder.registered_search_engines"
@@ -283,11 +287,15 @@ def test_spec_builder_or_operator() -> None:
         range={"min": 0, "max": 100},
         examples=[10],
     )
-    mock_engine1 = MagicMock(spec=BaseSearchEngine)
-    mock_engine2 = MagicMock(spec=BaseSearchEngine)
+    text_search_engine = TextSearchEngine(
+        config=TextSearchEngineConfig(matching_strategy="exact"),
+    )
+    number_search_engine = NumberSearchEngine(
+        config=NumberSearchEngineConfig(),
+    )
 
-    builder1.add("text_schema", text_index, mock_engine1)
-    builder2.add("number_schema", number_index, mock_engine2)
+    builder1.add("text_schema", text_index, text_search_engine)
+    builder2.add("number_schema", number_index, number_search_engine)
 
     combined = builder1 | builder2
 
@@ -316,11 +324,16 @@ def test_spec_builder_or_operator_with_overlaps() -> None:
     builder1 = SpecBuilder()
     builder2 = SpecBuilder()
 
-    mock_index = MagicMock(spec=BaseIndex)
-    mock_engine = MagicMock(spec=BaseSearchEngine)
+    text_index = TextIndex(
+        description="Text schema",
+        examples=["example"],
+    )
+    text_search_engine = TextSearchEngine(
+        config=TextSearchEngineConfig(matching_strategy="exact"),
+    )
 
-    builder1.add("same_key", mock_index, mock_engine)
-    builder2.add("same_key", mock_index, mock_engine)
+    builder1.add("same_key", text_index, text_search_engine)
+    builder2.add("same_key", text_index, text_search_engine)
 
     with pytest.raises(ValueError, match="overlapping spec_units"):
         _ = builder1 | builder2

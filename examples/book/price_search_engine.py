@@ -3,8 +3,8 @@
 import operator
 from functools import reduce
 
-import pandas as pd
-from search_result import BookSearchResult
+from data_loader import load_data
+from search_result import BookSearchResultIndex
 
 from massivesearch.search_engine.number_engine import (
     NumberSearchEngine,
@@ -18,7 +18,6 @@ book_builder = SpecBuilder()
 class BookPriceSearchConfig(BaseSearchEngineConfig):
     """Config for book price search engine."""
 
-    file_path: str = "examples/book/books.csv"
     column_name: str
 
 
@@ -28,9 +27,9 @@ class BookTextSearch(NumberSearchEngine):
 
     config: BookPriceSearchConfig
 
-    def search(self, arguments: NumberSearchEngineArguments) -> BookSearchResult:
+    def search(self, arguments: NumberSearchEngineArguments) -> BookSearchResultIndex:
         """Search for book text values within any of the specified ranges."""
-        book_df = pd.read_csv(self.config.file_path)
+        book_df = load_data()
         book_price_series = book_df[self.config.column_name]
 
         masks = []
@@ -51,9 +50,6 @@ class BookTextSearch(NumberSearchEngine):
             masks.append(current_mask)
 
         if not masks:
-            final_result_df = book_df.iloc[0:0]
-        else:
-            combined_mask = reduce(operator.or_, masks)
-            final_result_df = book_df[combined_mask]
-
-        return final_result_df
+            return book_df.index
+        combined_mask = reduce(operator.or_, masks)
+        return book_df[combined_mask].index

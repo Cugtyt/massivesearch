@@ -40,6 +40,10 @@ def main() -> None:
         "I want to buy a book about prince or lord, and I only have 20 dollars.",
     )
 
+    logger.info("Search query:")
+    for result in execute_results:
+        logger.info(result.query)
+
     aggregator = BookAggregator()
     agg_result = aggregator.aggregate(execute_results)
     logger.info("Books:")

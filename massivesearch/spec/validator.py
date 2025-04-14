@@ -7,7 +7,7 @@ from massivesearch.spec.base_search_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
-    BaseSearchResult,
+    BaseSearchResultIndex,
 )
 
 
@@ -115,7 +115,7 @@ def _validate_search_method(cls: type[BaseSearchEngine]) -> None:
         msg = f"{cls.__name__} search method must have a return type."
         raise AttributeError(msg)
     return_annotation = cls.search.__annotations__.get("return")
-    if not issubclass(return_annotation, BaseSearchResult):
+    if not issubclass(return_annotation, BaseSearchResultIndex):
         msg = (
             f"{cls.__name__} search method return type must be a "
             f"subclass of BaseSearchResult."

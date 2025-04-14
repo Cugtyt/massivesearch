@@ -8,7 +8,7 @@ from massivesearch.spec.base_search_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
-    BaseSearchResult,
+    BaseSearchResultIndex,
 )
 from massivesearch.spec.builder import SpecBuilder
 
@@ -59,7 +59,7 @@ class NumberSearchEngine(BaseSearchEngine):
 
     config: NumberSearchEngineConfig
 
-    def search(self, arguments: NumberSearchEngineArguments) -> BaseSearchResult:
+    def search(self, arguments: NumberSearchEngineArguments) -> BaseSearchResultIndex:
         """Search for numbers."""
         msg = "Number search engine is not implemented yet."
         raise NotImplementedError(msg)

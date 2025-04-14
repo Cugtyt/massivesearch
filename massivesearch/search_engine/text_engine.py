@@ -8,7 +8,7 @@ from massivesearch.spec.base_search_engine import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
-    BaseSearchResult,
+    BaseSearchResultIndex,
 )
 from massivesearch.spec.builder import SpecBuilder
 
@@ -35,7 +35,7 @@ class TextSearchEngine(BaseSearchEngine):
 
     config: TextSearchEngineConfig
 
-    def search(self, arguments: TextSearchEngineArguments) -> BaseSearchResult:
+    def search(self, arguments: TextSearchEngineArguments) -> BaseSearchResultIndex:
         """Search for text values."""
         msg = "Text search engine is not implemented yet."
         raise NotImplementedError(msg)

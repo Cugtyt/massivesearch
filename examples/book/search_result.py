@@ -2,8 +2,8 @@
 
 import pandas as pd
 
-from massivesearch.spec.base_search_engine import BaseSearchResult
+from massivesearch.spec.base_search_engine import BaseSearchResultIndex
 
 
-class BookSearchResult(pd.DataFrame, BaseSearchResult):
+class BookSearchResultIndex(pd.Index, BaseSearchResultIndex):
     """Result of book text search."""
