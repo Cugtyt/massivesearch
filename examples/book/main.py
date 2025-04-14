@@ -1,6 +1,6 @@
 """Book search example."""  # noqa: INP001
 
-import functools  # Add this import
+import functools
 import logging
 from pathlib import Path
 
