@@ -256,7 +256,7 @@ def test_spec_builder_register_search_engine() -> None:
     class TestSearchEngine(BaseSearchEngine):
         config: TextSearchEngineConfig
 
-        def search(self, arguments: TestSearchEngineArguments) -> BaseSearchResult:
+        def search(self, arguments: TestSearchEngineArguments) -> BaseSearchResult:  # noqa: ARG002
             return MagicMock(spec=BaseSearchResult)
 
     if "test_engine" not in builder.registered_search_engines:
