@@ -1,8 +1,10 @@
 """Worker."""
 
+from pydantic import ValidationError
+
 from supersearch.model.base import BaseModelClient
-from supersearch.spec.base_search_engine import BaseSearchResult
 from supersearch.spec import Spec
+from supersearch.spec.base_search_engine import BaseSearchResult
 
 
 class Worker:
@@ -26,18 +28,22 @@ class Worker:
             },
         ]
 
-    def build_query(self, query: str) -> list[dict]:
+    def build_query(self, query: str) -> dict:
         """Generate the query based on the spec."""
         response = self.model_client.response(
             self._build_messages(query),
-            self.spec.format_model,
+            self.spec.query_model,
         )
 
         try:
+            self.spec.query_model(**response)
             return response["queries"]
         except KeyError:
             msg = "Failed to parse response: 'queries' key not found."
             raise ValueError(msg) from None
+        except ValidationError as e:
+            msg = f"Model didn't respond with a valid query: {e}"
+            raise ValueError(msg) from e
         except Exception as e:
             msg = f"Unexpected error: {e}"
             raise ValueError(msg) from e

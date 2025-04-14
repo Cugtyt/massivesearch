@@ -45,8 +45,6 @@ def test_spec_validator_valid() -> None:
     with Path("./test/spec/test_spec.yaml").open() as file:
         valid_spec = yaml.safe_load(file)
 
-
-
     try:
         spec_validator(
             valid_spec,

@@ -12,10 +12,11 @@ class SpecUnit(BaseModel):
     index: BaseIndex
     search_engine: BaseSearchEngine
 
+
 class Spec(BaseModel):
     """Spec class."""
 
     items: dict[str, SpecUnit]
 
     prompt_message: str
-    format_model: type[BaseModel]
+    query_model: type[BaseModel]

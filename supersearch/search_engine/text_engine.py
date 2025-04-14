@@ -18,7 +18,7 @@ spec_builder = SpecBuilder()
 class TextSearchEngineConfig(BaseSearchEngineConfig):
     """Config for text search engines."""
 
-    matching_strategy: str = Literal["exact", "contains", "starts_with", "ends_with"]
+    matching_strategy: Literal["exact", "contains", "starts_with", "ends_with"]
 
 
 class TextSearchEngineArguments(BaseSearchEngineArguments):
@@ -29,20 +29,13 @@ class TextSearchEngineArguments(BaseSearchEngineArguments):
     )
 
 
-class TextSearchResult(BaseSearchResult):
-    """Result of text search."""
-
-
 @spec_builder.search_engine("text_search")
 class TextSearchEngine(BaseSearchEngine):
     """Text search engine."""
 
     config: TextSearchEngineConfig
 
-    def search(self, arguments: TextSearchEngineArguments) -> TextSearchResult:
+    def search(self, arguments: TextSearchEngineArguments) -> BaseSearchResult:
         """Search for text values."""
-        if not isinstance(arguments, TextSearchEngineArguments):
-            msg = "Invalid arguments type. Expected TextSearchEngineArguments."
-            raise TypeError(msg)
-
-        return TextSearchResult()
+        msg = "Text search engine is not implemented yet."
+        raise NotImplementedError(msg)

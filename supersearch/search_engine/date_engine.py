@@ -64,19 +64,13 @@ class DateSearchEngineArguments(BaseSearchEngineArguments):
     )
 
 
-class DateSearchResult(BaseSearchResult):
-    """Result of date search."""
-
-
 @spec_builder.search_engine("date_search")
 class DateSearchEngine(BaseSearchEngine):
     """date search engine."""
 
     config: DateSearchEngineConfig
 
-    def search(self, arguments: DateSearchEngineArguments) -> DateSearchResult:
+    def search(self, arguments: DateSearchEngineArguments) -> BaseSearchResult:
         """Search for date values."""
-        if not isinstance(arguments, DateSearchEngineArguments):
-            msg = "Arguments must be DateSearchEngineArguments"
-            raise TypeError(msg)
-        return DateSearchResult()
+        msg = "Date search engine is not implemented yet."
+        raise NotImplementedError(msg)

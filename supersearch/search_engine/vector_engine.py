@@ -34,20 +34,13 @@ class VectorSearchEngineArguments(BaseSearchEngineArguments):
     )
 
 
-class VectorSearchResult(BaseSearchResult):
-    """Result of vector search."""
-
-
 @spec_builder.search_engine("vector_search")
 class VectorSearchEngine(BaseSearchEngine):
     """Vector search engine."""
 
     config: VectorSearchEngineConfig
 
-    def search(self, arguments: VectorSearchEngineArguments) -> VectorSearchResult:
+    def search(self, arguments: VectorSearchEngineArguments) -> BaseSearchResult:
         """Search for vector values."""
-        if not isinstance(arguments, VectorSearchEngineArguments):
-            msg = "Invalid arguments type. Expected VectorSearchEngineArguments."
-            raise TypeError(msg)
-
-        return VectorSearchResult()
+        msg = "Vector search engine is not implemented yet."
+        raise NotImplementedError(msg)

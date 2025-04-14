@@ -76,7 +76,7 @@ def test_spec_builder_add() -> None:
         examples=["example1", "example2"],
     )
     text_search_engine = TextSearchEngine(
-        config=TextSearchEngineConfig(),
+        config=TextSearchEngineConfig(matching_strategy="exact"),
     )
     builder.add("text_schema", text_index, text_search_engine)
 
@@ -316,14 +316,12 @@ def test_spec_builder_or_operator_with_overlaps() -> None:
     builder1 = SpecBuilder()
     builder2 = SpecBuilder()
 
-    # Add the same key to both builders
     mock_index = MagicMock(spec=BaseIndex)
     mock_engine = MagicMock(spec=BaseSearchEngine)
 
     builder1.add("same_key", mock_index, mock_engine)
     builder2.add("same_key", mock_index, mock_engine)
 
-    # Combining should raise an error
     with pytest.raises(ValueError, match="overlapping spec_units"):
         _ = builder1 | builder2
 

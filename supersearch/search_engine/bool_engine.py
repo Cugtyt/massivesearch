@@ -47,19 +47,13 @@ class BoolSearchEngineArguments(BaseSearchEngineArguments):
         return self
 
 
-class BoolSearchResult(BaseSearchResult):
-    """Result of boolean search."""
-
-
 @spec_builder.search_engine("boolean_search")
 class BoolSearchEngine(BaseSearchEngine):
     """Boolean search engine."""
 
     config: BoolSearchEngineConfig
 
-    def search(self, arguments: BoolSearchEngineArguments) -> BoolSearchResult:
+    def search(self, arguments: BoolSearchEngineArguments) -> BaseSearchResult:
         """Search for boolean values."""
-        if not isinstance(arguments, BoolSearchEngineArguments):
-            msg = "Arguments must be BoolSearchEngineArguments"
-            raise TypeError(msg)
-        return BoolSearchResult()
+        msg = "Boolean search engine is not implemented yet."
+        raise NotImplementedError(msg)

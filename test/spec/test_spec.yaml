@@ -6,7 +6,7 @@ description:
       - "This is clothes for all seasons."
       - "This is a high-performance laptop."
   search_engine:
-    type: "text_search"
+    type: text_search
     config:
       matching_strategy: "contains"
 target_audience:
@@ -18,7 +18,7 @@ target_audience:
       - "Adults"
       - "This is for everyone."
   search_engine:
-    type: "text_search"
+    type: text_search
     config:
       matching_strategy: "exact"
 is_available:
@@ -42,7 +42,7 @@ price:
       - 999.99
       - 0.00
   search_engine:
-    type: "number_search"
+    type: number_search
 date:
   index:
     type: date_index
@@ -59,7 +59,7 @@ image:
     type: vector_index
     description: Product images, use language to query the images, like "red dress".
   search_engine:
-    type: "vector_search"
+    type: vector_search
     config:
       top_k: 5
       distance_metric: "cosine"

@@ -20,7 +20,7 @@ from supersearch.search_engine import (
     text_search_engine_spec_builder,
     vector_search_engine_spec_builder,
 )
-from supersearch.worker.worker import Worker
+from supersearch.worker import Worker
 
 
 def test_worker_build_query() -> None:

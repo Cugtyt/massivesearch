@@ -14,6 +14,7 @@ from supersearch.spec.builder import SpecBuilder
 
 spec_builder = SpecBuilder()
 
+
 class NumberSearchEngineConfig(BaseSearchEngineConfig):
     """Config for number search engine."""
 
@@ -52,19 +53,13 @@ class NumberSearchEngineArguments(BaseSearchEngineArguments):
     )
 
 
-class NumberSearchResult(BaseSearchResult):
-    """Result of number search."""
-
-
 @spec_builder.search_engine("number_search")
 class NumberSearchEngine(BaseSearchEngine):
     """Number search engine."""
 
     config: NumberSearchEngineConfig
 
-    def search(self, arguments: NumberSearchEngineArguments) -> NumberSearchResult:
+    def search(self, arguments: NumberSearchEngineArguments) -> BaseSearchResult:
         """Search for numbers."""
-        if not isinstance(arguments, NumberSearchEngineArguments):
-            msg = "Arguments must be NumberSearchEngineArguments"
-            raise TypeError(msg)
-        return NumberSearchResult()
+        msg = "Number search engine is not implemented yet."
+        raise NotImplementedError(msg)

@@ -155,7 +155,7 @@ class SpecBuilder:
         return Spec(
             items=self.spec_units,
             prompt_message=self.build_prompt(),
-            format_model=self.build_format(),
+            query_model=self.build_format(),
         )
 
     def index(self, name: str) -> type[BaseIndex]:
