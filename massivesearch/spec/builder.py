@@ -60,11 +60,11 @@ class SpecBuilder:
         self.registered_aggregators: dict[str, type[BaseAggregator]] = {}
 
         for name, index in (indexs or {}).items():
-            self.register_index(name, index)
+            self.register_index_type(name, index)
         for name, search_engine in (search_engines or {}).items():
-            self.register_search_engine(name, search_engine)
+            self.register_search_engine_type(name, search_engine)
         for name, aggregator in (aggregators or {}).items():
-            self.register_aggregator(name, aggregator)
+            self.register_aggregator_type(name, aggregator)
 
         self.spec_aggregator: BaseAggregator | None = None
 
@@ -88,62 +88,74 @@ class SpecBuilder:
             index_type = index.get("type")
             search_engine = index.get("search_engine")
             search_engine_type = search_engine.get("type")
-            self.add_index(
+            self.add_index_spec(
                 name,
-                self.registered_indexs[index_type](**index),
-                self.registered_search_engines[search_engine_type](
-                    **search_engine,
-                ),
+                index_type=index_type,
+                index_arguments=index,
+                search_engine_type=search_engine_type,
+                search_engine_arguments=search_engine,
             )
 
         aggregator_spec = spec.get("aggregator")
         if aggregator_spec:
             aggregator_type = aggregator_spec.get("type")
-            self.set_aggregator(
-                self.registered_aggregators[aggregator_type](**aggregator_spec),
+            self.set_aggregator_spec(
+                aggregator_type=aggregator_type,
+                aggregator_arguments=aggregator_spec,
             )
 
-    def add_index(
+    def add_index_spec(
         self,
         name: str,
-        index: BaseIndex,
-        search_engine: BaseSearchEngine,
+        *,
+        index_type: str,
+        index_arguments: dict,
+        search_engine_type: str,
+        search_engine_arguments: dict,
     ) -> None:
         """Add a new index and search engine to the spec."""
         if not name:
             msg = "Name cannot be empty."
             raise ValueError(msg)
-        if not index:
-            msg = "Index cannot be empty."
+        if not index_type:
+            msg = "Index type cannot be empty."
             raise ValueError(msg)
-        if not search_engine:
-            msg = "Search engine cannot be empty."
+        if not search_engine_type:
+            msg = "Search engine type cannot be empty."
             raise ValueError(msg)
 
         if name in self.spec_units:
             msg = f"Spec with name '{name}' already exists."
             raise ValueError(msg)
 
+        index = self.registered_indexs[index_type](**index_arguments)
+        search_engine = self.registered_search_engines[search_engine_type](
+            **search_engine_arguments,
+        )
         self.spec_units[name] = SpecIndexUnit(
             index=index,
             search_engine=search_engine,
             search_engine_arguments_type=self._get_arguments_type(search_engine),
         )
 
-    def set_aggregator(
+    def set_aggregator_spec(
         self,
-        aggregator: BaseAggregator,
+        *,
+        aggregator_type: str,
+        aggregator_arguments: dict,
     ) -> None:
         """Set the aggregator for the spec."""
-        if not aggregator:
-            msg = "Aggregator cannot be empty."
+        if not aggregator_type:
+            msg = "Aggregator type cannot be empty."
             raise ValueError(msg)
 
-        if not isinstance(aggregator, BaseAggregator):
-            msg = "Aggregator must be an instance of BaseAggregator."
-            raise TypeError(msg)
+        if aggregator_type not in self.registered_aggregators:
+            msg = f"Aggregator type '{aggregator_type}' is unknown."
+            raise ValueError(msg)
 
-        self.spec_aggregator = aggregator
+        self.spec_aggregator = self.registered_aggregators[aggregator_type](
+            **aggregator_arguments or {},
+        )
 
     def build_prompt(self) -> str:
         """Build the prompt for the spec."""
@@ -214,7 +226,7 @@ class SpecBuilder:
 
         return decorator
 
-    def register_index(self, name: str, index: type[BaseIndex]) -> None:
+    def register_index_type(self, name: str, index: type[BaseIndex]) -> None:
         """Add a new index to the spec."""
         if not name:
             msg = "Name cannot be empty."
@@ -246,7 +258,7 @@ class SpecBuilder:
 
         return decorator
 
-    def register_search_engine(
+    def register_search_engine_type(
         self,
         name: str,
         search_engine: type[BaseSearchEngine],
@@ -281,7 +293,7 @@ class SpecBuilder:
 
         return decorator
 
-    def register_aggregator(
+    def register_aggregator_type(
         self,
         name: str,
         aggregator: type[BaseAggregator],

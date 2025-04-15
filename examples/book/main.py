@@ -65,7 +65,7 @@ class BookPriceSearchEngine(PandasNumberSearchEngine):
     """
 
 
-book_builder.register_aggregator(
+book_builder.register_aggregator_type(
     "book_aggregator",
     PandasAggregator,
 )

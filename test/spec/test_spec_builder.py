@@ -74,37 +74,39 @@ def test_spec_builder_init_with_index_and_engine() -> None:
 
 def test_spec_builder_add() -> None:
     """Test adding schemas to SpecBuilder."""
-    builder = SpecBuilder()
-    text_index = TextIndex(
-        description="A text schema.",
-        examples=["example1", "example2"],
+    builder = text_index_spec_builder | text_search_engine_spec_builder
+
+    builder.add_index_spec(
+        "text_schema",
+        index_type="text_index",
+        index_arguments={
+            "description": "A text schema.",
+            "examples": ["example1", "example2"],
+        },
+        search_engine_type="text_search",
+        search_engine_arguments={
+            "matching_strategy": "exact",
+        },
     )
-    text_search_engine = TextSearchEngine(
-        matching_strategy="exact",
-    )
-    builder.add_index("text_schema", text_index, text_search_engine)
 
     if "text_schema" not in builder.spec_units:
         msg = '"text_schema" not found in builder.spec_units'
         raise ValueError(msg)
     spec_unit = builder.spec_units["text_schema"]
-    if spec_unit.index != text_index:
+    if not isinstance(spec_unit.index, builder.registered_indexs["text_index"]):
         msg = "Expected builder.spec_units['text_schema'].index to match text_index."
-        raise ValueError(msg)
-    if spec_unit.search_engine != text_search_engine:
+        raise TypeError(msg)
+    if not isinstance(
+        spec_unit.search_engine,
+        builder.registered_search_engines["text_search"],
+    ):
         msg = (
             "Expected builder.spec_units['text_schema'].search_engine to match "
             "text_search_engine."
         )
-        raise ValueError(msg)
+        raise TypeError(msg)
     if spec_unit.search_engine_arguments_type is None:
         msg = "Expected search_engine_arguments_type to be set."
-        raise ValueError(msg)
-    if builder.registered_indexs:
-        msg = "Expected builder.registered_indexs to be empty after add."
-        raise ValueError(msg)
-    if builder.registered_search_engines:
-        msg = "Expected builder.registered_search_engines to be empty after add."
         raise ValueError(msg)
 
 
@@ -127,7 +129,7 @@ def test_spec_builder_include() -> None:
         | text_search_engine_spec_builder
         | vector_search_engine_spec_builder
     )
-    builder.register_aggregator("test_aggregator", TestAggregator)
+    builder.register_aggregator_type("test_aggregator", TestAggregator)
     builder.include(valid_spec)
 
     if len(builder.spec_units) != len(valid_spec["indexs"]):
@@ -183,7 +185,7 @@ def test_spec_builder_build_prompt() -> None:
         | text_search_engine_spec_builder
         | vector_search_engine_spec_builder
     )
-    builder.register_aggregator("test_aggregator", TestAggregator)
+    builder.register_aggregator_type("test_aggregator", TestAggregator)
     builder.include(valid_spec)
     prompt = builder.build_prompt()
 
@@ -216,7 +218,7 @@ def test_spec_builder_build_format() -> None:
     with spec_file_path.open() as file:
         valid_spec = yaml.safe_load(file)
 
-    builder.register_aggregator("test_aggregator", TestAggregator)
+    builder.register_aggregator_type("test_aggregator", TestAggregator)
     builder.include(valid_spec)
 
     format_model = builder.build_format()
@@ -315,13 +317,29 @@ def test_spec_builder_or_operator() -> None:
         range={"min": 0, "max": 100},
         examples=[10],
     )
-    text_search_engine = TestTextSearchEngine(
-        matching_strategy="exact",
+    builder1.add_index_spec(
+        "text_schema",
+        index_type="text",
+        index_arguments={
+            "description": "Text schema",
+            "examples": ["example"],
+        },
+        search_engine_type="text_engine",
+        search_engine_arguments={
+            "matching_strategy": "exact",
+        },
     )
-    number_search_engine = TestNumberSearchEngine()
-
-    builder1.add_index("text_schema", text_index, text_search_engine)
-    builder2.add_index("number_schema", number_index, number_search_engine)
+    builder2.add_index_spec(
+        "number_schema",
+        index_type="number",
+        index_arguments={
+            "description": "Number schema",
+            "range": {"min": 0, "max": 100},
+            "examples": [10],
+        },
+        search_engine_type="number_engine",
+        search_engine_arguments={},
+    )
 
     combined = builder1 | builder2
 
@@ -364,35 +382,41 @@ def test_spec_builder_or_operator_with_overlaps() -> None:
     builder2 = SpecBuilder()
 
     @builder1.index("same_index")
+    @builder2.index("same_index")
     class TestIndex1(TextIndex):
         pass
 
     @builder1.search_engine("same_engine")
+    @builder2.search_engine("same_engine")
     class TestEngine1(TextSearchEngine):
         pass
 
-    @builder2.index("same_index")
-    class TestIndex2(NumberIndex):
-        pass
-
-    @builder2.search_engine("same_engine")
-    class TestEngine2(NumberSearchEngine):
-        pass
-
-    text_index = TestIndex1(
-        description="Text schema",
-        examples=["example"],
+    builder1.add_index_spec(
+        "same_key",
+        index_type="same_index",
+        index_arguments={
+            "description": "A text schema.",
+            "examples": ["example1", "example2"],
+        },
+        search_engine_type="same_engine",
+        search_engine_arguments={
+            "matching_strategy": "exact",
+        },
     )
-    text_search_engine = TestEngine1(
-        matching_strategy="exact",
+    builder2.add_index_spec(
+        "same_key",
+        index_type="same_index",
+        index_arguments={
+            "description": "A text schema.",
+            "examples": ["example1", "example2"],
+        },
+        search_engine_type="same_engine",
+        search_engine_arguments={
+            "matching_strategy": "exact",
+        },
     )
-
-    builder1_spec = SpecBuilder()
-    builder2_spec = SpecBuilder()
-    builder1_spec.add_index("same_key", text_index, text_search_engine)
-    builder2_spec.add_index("same_key", text_index, text_search_engine)
     with pytest.raises(ValueError, match="overlapping spec_units"):
-        _ = builder1_spec | builder2_spec
+        _ = builder1 | builder2
 
     builder1_reg_idx = SpecBuilder()
     builder2_reg_idx = SpecBuilder()

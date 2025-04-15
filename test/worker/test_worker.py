@@ -49,10 +49,13 @@ def test_worker_build_query() -> None:
     with pytest.raises(SpecSchemaError):
         builder.include(valid_spec)
 
-    builder.register_aggregator("test_aggregator", TestAggregator)
+    builder.register_aggregator_type("test_aggregator", TestAggregator)
     builder.include(valid_spec)
 
-    builder.set_aggregator(TestAggregator())
+    builder.set_aggregator_spec(
+        aggregator_type="test_aggregator",
+        aggregator_arguments={},
+    )
 
     worker = Worker(
         spec=builder.spec,
@@ -89,10 +92,13 @@ def test_worker_build_complex_query() -> None:
         | text_search_engine_spec_builder
         | vector_search_engine_spec_builder
     )
-    builder.register_aggregator("test_aggregator", TestAggregator)
+    builder.register_aggregator_type("test_aggregator", TestAggregator)
     builder.include(valid_spec)
 
-    builder.set_aggregator(TestAggregator())
+    builder.set_aggregator_spec(
+        aggregator_type="test_aggregator",
+        aggregator_arguments={},
+    )
     worker = Worker(
         spec=builder.spec,
         model_client=AzureOpenAIClient(temperature=0),
@@ -148,10 +154,13 @@ def test_worker_execute() -> None:
         | text_search_engine_spec_builder
         | vector_search_engine_spec_builder
     )
-    builder.register_aggregator("test_aggregator", TestAggregator)
+    builder.register_aggregator_type("test_aggregator", TestAggregator)
     builder.include(valid_spec)
 
-    builder.set_aggregator(TestAggregator())
+    builder.set_aggregator_spec(
+        aggregator_type="test_aggregator",
+        aggregator_arguments={},
+    )
     fake_model_client = MagicMock()
     fake_model_client.response.return_value = {
         "queries": [],

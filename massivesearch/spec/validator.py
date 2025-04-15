@@ -137,9 +137,11 @@ def aggregator_spec_validator(
         aggregator_class = registered_aggregators[aggregator_type]
         aggregator_class(**aggregator_spec)
     except ValidationError as e:
+        name = "aggregator"
         msg = f"Aggregator '{aggregator_type}' validation failed: {e}"
         raise SpecSchemaError(name, msg) from e
     except Exception as e:
+        name = "aggregator"
         msg = f"Aggregator '{aggregator_type}' initialization failed: {e}"
         raise SpecSchemaError(name, msg) from e
 

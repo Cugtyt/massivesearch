@@ -37,7 +37,7 @@ builder = (
     | text_search_engine_spec_builder
     | vector_search_engine_spec_builder
 )
-builder.register_aggregator("test_aggregator", TestAggregator)
+builder.register_aggregator_type("test_aggregator", TestAggregator)
 
 
 def test_spec_validator_valid() -> None:
@@ -308,19 +308,23 @@ def test_spec_validator_invalid_search_engine_schema() -> None:
         )
 
 
-@pytest.mark.skip(reason="Aggregator builder/validation not fully implemented yet")
 def test_spec_validator_valid_with_aggregator() -> None:
     """Test spec_validator with valid data including an aggregator."""
     # Assuming a valid spec structure with an aggregator
     valid_spec = {
-        "index": [
+        "indexs": [
             {
                 "name": "description",
                 "type": "text_index",
-                "search_engine": {"type": "text_search"},
+                "description": "A detailed description of the product.",
+                "examples": ["example1", "example2"],
+                "search_engine": {
+                    "type": "text_search",
+                    "matching_strategy": "exact",
+                },
             },
         ],
-        "aggregator": {"type": "some_aggregator", "param": "value"},
+        "aggregator": {"type": "test_aggregator", "param": "value"},
     }
 
     try:
@@ -334,15 +338,19 @@ def test_spec_validator_valid_with_aggregator() -> None:
         pytest.fail(f"spec_validator raised an unexpected exception: {e}")
 
 
-@pytest.mark.skip(reason="Aggregator builder/validation not fully implemented yet")
 def test_spec_validator_missing_aggregator_type() -> None:
     """Test spec_validator with a missing aggregator type."""
     invalid_spec = {
-        "index": [
+        "indexs": [
             {
                 "name": "description",
                 "type": "text_index",
-                "search_engine": {"type": "text_search"},
+                "description": "A detailed description of the product.",
+                "examples": ["example1", "example2"],
+                "search_engine": {
+                    "type": "text_search",
+                    "matching_strategy": "exact",
+                },
             },
         ],
         "aggregator": {
@@ -362,15 +370,19 @@ def test_spec_validator_missing_aggregator_type() -> None:
         )
 
 
-@pytest.mark.skip(reason="Aggregator builder/validation not fully implemented yet")
 def test_spec_validator_unknown_aggregator_type() -> None:
     """Test spec_validator with an unknown aggregator type."""
     invalid_spec = {
-        "index": [
+        "indexs": [
             {
                 "name": "description",
                 "type": "text_index",
-                "search_engine": {"type": "text_search"},
+                "description": "A detailed description of the product.",
+                "examples": ["example1", "example2"],
+                "search_engine": {
+                    "type": "text_search",
+                    "matching_strategy": "exact",
+                },
             },
         ],
         "aggregator": {"type": "unknown_aggregator", "param": "value"},
@@ -387,15 +399,30 @@ def test_spec_validator_unknown_aggregator_type() -> None:
         )
 
 
-@pytest.mark.skip(reason="Aggregator builder/validation not fully implemented yet")
 def test_spec_validator_invalid_aggregator_schema() -> None:
     """Test spec_validator with an invalid aggregator schema (Pydantic error)."""
+
+    class SomeAggregator(TestAggregator):
+        """Some aggregator."""
+
+        some_param: str
+
+    builder.register_aggregator_type(
+        "some_aggregator",
+        SomeAggregator,
+    )
+
     invalid_spec = {
-        "index": [
+        "indexs": [
             {
                 "name": "description",
                 "type": "text_index",
-                "search_engine": {"type": "text_search"},
+                "description": "A detailed description of the product.",
+                "examples": ["example1", "example2"],
+                "search_engine": {
+                    "type": "text_search",
+                    "matching_strategy": "exact",
+                },
             },
         ],
         "aggregator": {
