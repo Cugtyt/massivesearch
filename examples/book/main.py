@@ -81,19 +81,18 @@ def main() -> None:
     worker = Worker(
         book_builder.spec,
         model_client=AzureOpenAIClient(temperature=0),
+        aggregator=BookAggregator(
+            config=PandasAggregatorConfig(file_path="./examples/book/books.csv"),
+        ),
     )
-    execute_results = worker.execute(
+    agg_result = worker.execute(
         "I want to buy a book about prince or lord, and I only have 20 dollars.",
     )
 
     logger.info("Search query:")
-    for result in execute_results:
-        logger.info(result.query)
+    for result in worker.last_search_query:
+        logger.info(result)
 
-    aggregator = BookAggregator(
-        config=PandasAggregatorConfig(file_path="./examples/book/books.csv"),
-    )
-    agg_result = aggregator.aggregate(execute_results)
     logger.info("Books:")
     logger.info(agg_result)
 

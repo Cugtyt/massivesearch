@@ -1,6 +1,6 @@
 """Aggregator module for massivesearch."""
 
-from massivesearch.aggregator.aggregator import (
+from massivesearch.aggregator.base import (
     Aggregator,
     AggregatorConfig,
     AggregatorResult,

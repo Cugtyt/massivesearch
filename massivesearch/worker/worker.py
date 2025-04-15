@@ -1,29 +1,29 @@
 """Worker."""
 
-from dataclasses import dataclass
-
 from pydantic import ValidationError
 
+from massivesearch.aggregator import Aggregator, AggregatorResult
 from massivesearch.model.base import BaseModelClient
 from massivesearch.search_engine.base import BaseSearchResultIndex
 from massivesearch.spec import Spec
 
-
-@dataclass
-class WorkerExecuteResult:
-    """Worker execute result."""
-
-    query: dict
-    result: dict[str, BaseSearchResultIndex]
+WorkerSearchResult = list[dict[str, BaseSearchResultIndex]]
 
 
 class Worker:
     """Worker class."""
 
-    def __init__(self, spec: Spec, model_client: BaseModelClient) -> None:
+    def __init__(
+        self,
+        spec: Spec,
+        model_client: BaseModelClient,
+        aggregator: Aggregator,
+    ) -> None:
         """Initialize the worker with spec."""
         self.spec = spec
         self.model_client = model_client
+        self.last_search_query: list[dict] = []
+        self.aggregator = aggregator
 
     def _build_messages(self, query: str) -> list[dict[str, str]]:
         """Build the prompt for the spec."""
@@ -47,7 +47,8 @@ class Worker:
 
         try:
             self.spec.query_model(**response)
-            return response["queries"]
+            self.last_search_query = response["queries"]
+            return self.last_search_query
         except KeyError:
             msg = "Failed to parse response: 'queries' key not found."
             raise ValueError(msg) from None
@@ -58,7 +59,7 @@ class Worker:
             msg = f"Unexpected error: {e}"
             raise ValueError(msg) from e
 
-    def execute(self, query: str) -> list[WorkerExecuteResult]:
+    def search(self, query: str) -> WorkerSearchResult:
         """Execute the query."""
         search_queries = self.build_query(query)
         execute_results = []
@@ -72,11 +73,11 @@ class Worker:
                     search_engine_arguments,
                 )
                 result[name] = search_result
-            execute_results.append(
-                WorkerExecuteResult(
-                    query=search_query,
-                    result=result,
-                ),
-            )
+            execute_results.append(result)
 
         return execute_results
+
+    def execute(self, query: str) -> AggregatorResult:
+        """Execute the query."""
+        search_results = self.search(query)
+        return self.aggregator.aggregate(self.search(query))

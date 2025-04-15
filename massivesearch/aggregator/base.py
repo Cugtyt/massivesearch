@@ -1,10 +1,12 @@
 """Aggregator."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from pydantic import BaseModel
 
-from massivesearch.worker import WorkerExecuteResult
+from massivesearch.search_engine.base import BaseSearchResultIndex
+
+WorkerSearchResult = list[dict[str, BaseSearchResultIndex]]
 
 
 class AggregatorResult:
@@ -15,17 +17,13 @@ class AggregatorConfig(BaseModel):
     """Aggregator result config."""
 
 
-class Aggregator(ABC):
+class Aggregator(BaseModel):
     """Aggregator class."""
 
     config: AggregatorConfig
 
-    def __init__(self, config: AggregatorConfig) -> None:
-        """Initialize the aggregator."""
-        self.config = config
-
     @abstractmethod
-    def aggregate(self, worker_results: list[WorkerExecuteResult]) -> AggregatorResult:
+    def aggregate(self, worker_results: WorkerSearchResult) -> AggregatorResult:
         """Aggregate the search results."""
         msg = "Subclasses must implement this method."
         raise NotImplementedError(msg)

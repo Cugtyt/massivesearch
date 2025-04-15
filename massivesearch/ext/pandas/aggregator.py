@@ -7,7 +7,7 @@ from massivesearch.ext.pandas.types import (
     PandasAggregatorConfig,
     PandasAggregatorResult,
 )
-from massivesearch.worker import WorkerExecuteResult
+from massivesearch.worker import WorkerSearchResult
 
 
 class PandasAggregator(Aggregator):
@@ -17,13 +17,13 @@ class PandasAggregator(Aggregator):
 
     def aggregate(
         self,
-        worker_results: list[WorkerExecuteResult],
+        worker_results: WorkerSearchResult,
     ) -> PandasAggregatorResult:
         """Aggregate the search results."""
         all_common_indices = []
 
         for single_search_result in worker_results:
-            partial_results = list(single_search_result.result.values())
+            partial_results = list(single_search_result.values())
             if partial_results and len(partial_results) > 0:
                 common_indices = partial_results[0]
                 for partial_result in partial_results[1:]:

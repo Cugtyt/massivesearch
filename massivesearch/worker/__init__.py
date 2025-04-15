@@ -1,5 +1,5 @@
 """Worker module."""
 
-from massivesearch.worker.worker import Worker, WorkerExecuteResult
+from massivesearch.worker.worker import Worker, WorkerSearchResult
 
-__all__ = ["Worker", "WorkerExecuteResult"]
+__all__ = ["Worker", "WorkerSearchResult"]
