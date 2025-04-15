@@ -69,6 +69,10 @@ book_builder.register_aggregator_type(
     "book_aggregator",
     PandasAggregator,
 )
+book_builder.register_ai_client_type(
+    "azure_openai",
+    AzureOpenAIClient,
+)
 
 
 def main() -> None:
@@ -77,10 +81,7 @@ def main() -> None:
         spec_file = yaml.safe_load(file)
 
     book_builder.include(spec_file)
-    worker = Worker(
-        book_builder.spec,
-        model_client=AzureOpenAIClient(temperature=0),
-    )
+    worker = Worker(book_builder.spec)
     agg_result = worker.execute(
         "I want to buy a book about prince or lord, and I only have 20 dollars.",
     )

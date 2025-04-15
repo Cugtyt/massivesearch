@@ -38,3 +38,6 @@ aggregator:
   type: book_aggregator
   file_path: examples/book/books.csv
   output_path: examples/book/aggregated_books.csv
+ai_client:
+  type: azure_openai
+  temperature: 0

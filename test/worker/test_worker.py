@@ -2,12 +2,12 @@
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 import yaml
 
 from massivesearch.model.azure_openai import AzureOpenAIClient
+from massivesearch.model.base import BaseAIClient
 from massivesearch.spec.validator import SpecSchemaError
 from massivesearch.worker import Worker
 from test.aggregator import TestAggregator
@@ -57,9 +57,18 @@ def test_worker_build_query() -> None:
         aggregator_arguments={},
     )
 
+    with pytest.raises(ValueError, match="No AI client available to build a spec"):
+        _ = builder.spec
+
+    builder.register_ai_client_type("azure_openai", AzureOpenAIClient)
+    builder.set_ai_client_spec(
+        ai_client_type="azure_openai",
+        ai_client_arguments={
+            "temperature": 0,
+        },
+    )
     worker = Worker(
         spec=builder.spec,
-        model_client=AzureOpenAIClient(temperature=0),
     )
     query_arguments = worker.build_query("for teens < $100")
     if not query_arguments:
@@ -99,9 +108,18 @@ def test_worker_build_complex_query() -> None:
         aggregator_type="test_aggregator",
         aggregator_arguments={},
     )
+    with pytest.raises(ValueError, match="No AI client available to build a spec"):
+        _ = builder.spec
+
+    builder.register_ai_client_type("azure_openai", AzureOpenAIClient)
+    builder.set_ai_client_spec(
+        ai_client_type="azure_openai",
+        ai_client_arguments={
+            "temperature": 0,
+        },
+    )
     worker = Worker(
         spec=builder.spec,
-        model_client=AzureOpenAIClient(temperature=0),
     )
     query_arguments = worker.build_query(
         "I want to buy a book for white snow, I only have $10, I am 10 years old, "
@@ -161,14 +179,24 @@ def test_worker_execute() -> None:
         aggregator_type="test_aggregator",
         aggregator_arguments={},
     )
-    fake_model_client = MagicMock()
-    fake_model_client.response.return_value = {
-        "queries": [],
-    }
+
+    class FakeAIClient(BaseAIClient):
+        """Fake AI client for testing."""
+
+        def response(self, a, b) -> dict:  # noqa: ANN001, ARG002
+            """Return a fake response."""
+            return {
+                "queries": [],
+            }
+
+    builder.register_ai_client_type("test_ai", FakeAIClient)
+    builder.set_ai_client_spec(
+        ai_client_type="test_ai",
+        ai_client_arguments={},
+    )
 
     worker = Worker(
         spec=builder.spec,
-        model_client=fake_model_client,
     )
 
     result = worker.execute("test")

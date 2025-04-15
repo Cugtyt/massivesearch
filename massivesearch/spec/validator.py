@@ -4,6 +4,7 @@ from pydantic import ValidationError
 
 from massivesearch.aggregator.base import BaseAggregator
 from massivesearch.index.base import BaseIndex
+from massivesearch.model.base import BaseAIClient
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
@@ -24,36 +25,34 @@ def spec_validator(
     registered_indexs: dict[str, BaseIndex],
     registered_search_engines: dict[str, BaseSearchEngine],
     registered_aggregators: dict[str, BaseAggregator],
+    registered_ai_clients: dict[str, BaseAIClient],
 ) -> None:
     """Validate the spec."""
-    index_spec = spec.get("indexs")
-    if index_spec is None:
-        name = "indexs"
-        msg = "Indexs spec is missing."
-        raise SpecSchemaError(name, msg)
-    if not isinstance(index_spec, list):
-        name = "indexs"
-        msg = "Indexs spec must be a list."
+    valid_keys = {"indexs", "aggregator", "ai_client"}
+    if spec.keys() - valid_keys:
+        name = "spec"
+        msg = "Spec contains invalid keys."
         raise SpecSchemaError(name, msg)
 
-    index_spec_validator(
-        index_spec,
-        registered_indexs,
-    )
-    search_engine_spec_validator(
-        index_spec,
-        registered_search_engines,
-    )
-
-    aggregator_spec = spec.get("aggregator")
-    if aggregator_spec is None:
-        name = "aggregator"
-        msg = "Aggregator spec is missing."
-        raise SpecSchemaError(name, msg)
-    aggregator_spec_validator(
-        aggregator_spec,
-        registered_aggregators,
-    )
+    if spec.get("indexs"):
+        index_spec_validator(
+            spec.get("indexs"),
+            registered_indexs,
+        )
+        search_engine_spec_validator(
+            spec.get("indexs"),
+            registered_search_engines,
+        )
+    if spec.get("aggregator"):
+        aggregator_spec_validator(
+            spec.get("aggregator"),
+            registered_aggregators,
+        )
+    if spec.get("ai_client"):
+        ai_client_spec_validator(
+            spec.get("ai_client"),
+            registered_ai_clients,
+        )
 
 
 def index_spec_validator(
@@ -61,6 +60,10 @@ def index_spec_validator(
     registered_indexs: dict[str, BaseIndex],
 ) -> None:
     """Validate the index."""
+    if not isinstance(index_spec, list):
+        name = "indexs"
+        msg = "Indexs spec must be a list."
+        raise SpecSchemaError(name, msg)
     for index in index_spec:
         if "name" not in index:
             msg = "Index name is missing."
@@ -90,6 +93,15 @@ def search_engine_spec_validator(
     registered_search_engines: dict[str, BaseSearchEngine],
 ) -> None:
     """Validate the search engine."""
+    if not index_spec or not isinstance(index_spec, list):
+        name = "indexs"
+        msg = "Indexs spec is missing or not a list."
+        raise SpecSchemaError(name, msg)
+    if not all("search_engine" in index for index in index_spec):
+        name = "indexs"
+        msg = "Search engine spec is missing in indexs."
+        raise SpecSchemaError(name, msg)
+
     for index in index_spec:
         if "name" not in index:
             msg = "Index name is missing."
@@ -122,6 +134,11 @@ def aggregator_spec_validator(
     registered_aggregators: dict[str, BaseAggregator],
 ) -> None:
     """Validate the aggregator."""
+    if aggregator_spec is None:
+        name = "aggregator"
+        msg = "Aggregator spec is missing."
+        raise SpecSchemaError(name, msg)
+
     if "type" not in aggregator_spec:
         name = "aggregator"
         msg = "Aggregator type is missing."
@@ -186,3 +203,32 @@ def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
             f"subclass of BaseSearchResult."
         )
         raise TypeError(msg)
+
+
+def ai_client_spec_validator(
+    ai_client_spec: dict,
+    registered_ai_clients: dict[str, BaseAIClient],
+) -> None:
+    """Validate the AI client."""
+    if not ai_client_spec or not isinstance(ai_client_spec, dict):
+        name = "ai_client"
+        msg = "AI client spec is missing or not a dictionary."
+        raise SpecSchemaError(name, msg)
+    if "type" not in ai_client_spec:
+        name = "ai_client"
+        msg = "AI client type is missing."
+        raise SpecSchemaError(name, msg)
+    ai_client_type = ai_client_spec.get("type")
+    if ai_client_type not in registered_ai_clients:
+        msg = f"AI client type '{ai_client_type}' is unknown."
+        raise SpecSchemaError(name, msg)
+
+    try:
+        ai_client_class = registered_ai_clients[ai_client_type]
+        ai_client_class(**ai_client_spec)
+    except ValidationError as e:
+        msg = f"AI client '{ai_client_type}' validation failed: {e}"
+        raise SpecSchemaError(name, msg) from e
+    except Exception as e:
+        msg = f"AI client '{ai_client_type}' initialization failed: {e}"
+        raise SpecSchemaError(name, msg) from e

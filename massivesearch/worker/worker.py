@@ -3,7 +3,6 @@
 from pydantic import ValidationError
 
 from massivesearch.aggregator import BaseAggregatorResult
-from massivesearch.model.base import BaseModelClient
 from massivesearch.search_engine.base import BaseSearchResultIndex
 from massivesearch.spec import Spec
 
@@ -16,11 +15,9 @@ class Worker:
     def __init__(
         self,
         spec: Spec,
-        model_client: BaseModelClient,
     ) -> None:
         """Initialize the worker with spec."""
         self.spec = spec
-        self.model_client = model_client
         self.last_search_query: list[dict] = []
 
     def _build_messages(self, query: str) -> list[dict[str, str]]:
@@ -38,7 +35,7 @@ class Worker:
 
     def build_query(self, query: str) -> list[dict]:
         """Generate the query based on the spec."""
-        response = self.model_client.response(
+        response = self.spec.ai_client.response(
             self._build_messages(query),
             self.spec.query_model,
         )

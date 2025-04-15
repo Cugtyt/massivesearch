@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from massivesearch.model.base import BaseAIClient
 from massivesearch.spec import (
     SpecSchemaError,
     spec_validator,
@@ -38,6 +39,7 @@ builder = (
     | vector_search_engine_spec_builder
 )
 builder.register_aggregator_type("test_aggregator", TestAggregator)
+builder.register_ai_client_type("test_ai_client", BaseAIClient)
 
 
 def test_spec_validator_valid() -> None:
@@ -51,6 +53,7 @@ def test_spec_validator_valid() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
     except SpecSchemaError as e:
         pytest.fail(f"spec_validator raised an unexpected exception: {e}")
@@ -68,13 +71,14 @@ def test_spec_validator_missing_index_key() -> None:
     }
     with pytest.raises(
         SpecSchemaError,
-        match="Spec 'indexs': Indexs spec is missing.",
+        match="Spec contains invalid keys.",
     ):
         spec_validator(
             invalid_spec,
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -96,6 +100,7 @@ def test_spec_validator_index_not_list() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -119,6 +124,7 @@ def test_spec_validator_missing_index_name() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -142,6 +148,7 @@ def test_spec_validator_missing_index_type() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -171,6 +178,7 @@ def test_spec_validator_unknown_index_type() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -194,6 +202,7 @@ def test_spec_validator_missing_search_engine() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -219,6 +228,7 @@ def test_spec_validator_missing_search_engine_type() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -246,6 +256,7 @@ def test_spec_validator_unknown_search_engine_type() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -276,6 +287,7 @@ def test_spec_validator_invalid_index_schema() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -305,6 +317,7 @@ def test_spec_validator_invalid_search_engine_schema() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -333,6 +346,7 @@ def test_spec_validator_valid_with_aggregator() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,  # Ensure this includes aggregator types
+            builder.registered_ai_clients,
         )
     except SpecSchemaError as e:
         pytest.fail(f"spec_validator raised an unexpected exception: {e}")
@@ -367,6 +381,7 @@ def test_spec_validator_missing_aggregator_type() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -396,6 +411,7 @@ def test_spec_validator_unknown_aggregator_type() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )
 
 
@@ -439,4 +455,5 @@ def test_spec_validator_invalid_aggregator_schema() -> None:
             builder.registered_indexs,
             builder.registered_search_engines,
             builder.registered_aggregators,
+            builder.registered_ai_clients,
         )

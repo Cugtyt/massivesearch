@@ -2,8 +2,10 @@
 
 from abc import ABC, abstractmethod
 
+from pydantic import BaseModel
 
-class BaseModelClient(ABC):
+
+class BaseAIClient(BaseModel, ABC):
     """Base class for all model clients."""
 
     @abstractmethod

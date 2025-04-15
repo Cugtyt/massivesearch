@@ -6,6 +6,7 @@ from pydantic import BaseModel, create_model
 
 from massivesearch.aggregator.base import BaseAggregator
 from massivesearch.index.base import BaseIndex
+from massivesearch.model.base import BaseAIClient
 from massivesearch.search_engine.base import BaseSearchEngine
 from massivesearch.spec.spec import Spec, SpecIndexUnit
 from massivesearch.spec.validator import spec_validator, validate_search_engine
@@ -52,12 +53,14 @@ class SpecBuilder:
         indexs: dict[str, type[BaseIndex]] | None = None,
         search_engines: dict[str, type[BaseSearchEngine]] | None = None,
         aggregators: dict[str, type[BaseAggregator]] | None = None,
+        ai_clients: dict[str, type[BaseAIClient]] | None = None,
     ) -> None:
         """Initialize the SpecBuilder with an empty specification."""
         self.spec_units: dict[str, SpecIndexUnit] = {}
         self.registered_indexs: dict[str, type[BaseIndex]] = {}
         self.registered_search_engines: dict[str, type[BaseSearchEngine]] = {}
         self.registered_aggregators: dict[str, type[BaseAggregator]] = {}
+        self.registered_ai_clients: dict[str, type[BaseAIClient]] = {}
 
         for name, index in (indexs or {}).items():
             self.register_index_type(name, index)
@@ -65,8 +68,11 @@ class SpecBuilder:
             self.register_search_engine_type(name, search_engine)
         for name, aggregator in (aggregators or {}).items():
             self.register_aggregator_type(name, aggregator)
+        for name, ai_client in (ai_clients or {}).items():
+            self.register_ai_client_type(name, ai_client)
 
         self.spec_aggregator: BaseAggregator | None = None
+        self.spec_ai_client: BaseAIClient | None = None
 
     def include(self, spec: dict) -> None:
         """Include a dictionary of schemas to the spec."""
@@ -79,22 +85,23 @@ class SpecBuilder:
             self.registered_indexs,
             self.registered_search_engines,
             self.registered_aggregators,
+            self.registered_ai_clients,
         )
 
         index_spec = spec.get("indexs")
-
-        for index in index_spec:
-            name = index.get("name")
-            index_type = index.get("type")
-            search_engine = index.get("search_engine")
-            search_engine_type = search_engine.get("type")
-            self.add_index_spec(
-                name,
-                index_type=index_type,
-                index_arguments=index,
-                search_engine_type=search_engine_type,
-                search_engine_arguments=search_engine,
-            )
+        if index_spec:
+            for index in index_spec:
+                name = index.get("name")
+                index_type = index.get("type")
+                search_engine = index.get("search_engine")
+                search_engine_type = search_engine.get("type")
+                self.add_index_spec(
+                    name,
+                    index_type=index_type,
+                    index_arguments=index,
+                    search_engine_type=search_engine_type,
+                    search_engine_arguments=search_engine,
+                )
 
         aggregator_spec = spec.get("aggregator")
         if aggregator_spec:
@@ -102,6 +109,14 @@ class SpecBuilder:
             self.set_aggregator_spec(
                 aggregator_type=aggregator_type,
                 aggregator_arguments=aggregator_spec,
+            )
+
+        ai_client_spec = spec.get("ai_client")
+        if ai_client_spec:
+            ai_client_type = ai_client_spec.get("type")
+            self.set_ai_client_spec(
+                ai_client_type=ai_client_type,
+                ai_client_arguments=ai_client_spec,
             )
 
     def add_index_spec(
@@ -157,6 +172,25 @@ class SpecBuilder:
             **aggregator_arguments or {},
         )
 
+    def set_ai_client_spec(
+        self,
+        *,
+        ai_client_type: str,
+        ai_client_arguments: dict,
+    ) -> None:
+        """Set the AI client for the spec."""
+        if not ai_client_type:
+            msg = "AI client type cannot be empty."
+            raise ValueError(msg)
+
+        if ai_client_type not in self.registered_ai_clients:
+            msg = f"AI client type '{ai_client_type}' is unknown."
+            raise ValueError(msg)
+
+        self.spec_ai_client = self.registered_ai_clients[ai_client_type](
+            **ai_client_arguments or {},
+        )
+
     def build_prompt(self) -> str:
         """Build the prompt for the spec."""
         if not self.spec_units:
@@ -206,11 +240,21 @@ class SpecBuilder:
     @property
     def spec(self) -> Spec:
         """Return the spec."""
+        if not self.spec_units:
+            msg = "No schemas available to build a spec."
+            raise ValueError(msg)
+        if not self.spec_ai_client:
+            msg = "No AI client available to build a spec."
+            raise ValueError(msg)
+        if not self.spec_aggregator:
+            msg = "No aggregator available to build a spec."
+            raise ValueError(msg)
         return Spec(
             indexs=self.spec_units,
             aggregator=self.spec_aggregator,
             prompt_message=self.build_prompt(),
             query_model=self.build_format(),
+            ai_client=self.spec_ai_client,
         )
 
     def index(self, name: str) -> type[BaseIndex]:
@@ -279,6 +323,7 @@ class SpecBuilder:
             msg = f"Search engine with name '{name}' already exists."
             raise ValueError(msg)
 
+        validate_search_engine(search_engine)
         self.registered_search_engines[name] = search_engine
 
     def aggregator(self, name: str) -> type[BaseAggregator]:
@@ -315,6 +360,41 @@ class SpecBuilder:
             raise ValueError(msg)
 
         self.registered_aggregators[name] = aggregator
+
+    def ai_client(self, name: str) -> type[BaseAIClient]:
+        """Register an AI client with a given key name."""
+
+        def decorator(cls: type[BaseAIClient]) -> type:
+            if name in self.registered_ai_clients:
+                msg = f"AI client with name '{name}' is already registered."
+                raise ValueError(msg)
+            self.registered_ai_clients[name] = cls
+            return cls
+
+        return decorator
+
+    def register_ai_client_type(
+        self,
+        name: str,
+        ai_client: type[BaseAIClient],
+    ) -> None:
+        """Add a new AI client to the spec."""
+        if not name:
+            msg = "Name cannot be empty."
+            raise ValueError(msg)
+        if not ai_client:
+            msg = "AI client cannot be empty."
+            raise ValueError(msg)
+
+        if issubclass(ai_client, BaseAIClient) is False:
+            msg = f"AI client '{name}' is not a subclass of BaseAIClient."
+            raise TypeError(msg)
+
+        if name in self.registered_ai_clients:
+            msg = f"AI client with name '{name}' already exists."
+            raise ValueError(msg)
+
+        self.registered_ai_clients[name] = ai_client
 
     def __or__(self, other: "SpecBuilder") -> "SpecBuilder":
         """Combine two SpecBuilders using the | operator."""
@@ -355,6 +435,10 @@ class SpecBuilder:
                 "SpecBuilder has overlapping registered_aggregators: "
                 f"{overlap_registered_aggregators}."
             )
+            raise ValueError(msg)
+
+        if self.spec_ai_client and other.spec_ai_client:
+            msg = "SpecBuilder has overlapping ai_clients."
             raise ValueError(msg)
 
         if self.spec_aggregator and other.spec_aggregator:
