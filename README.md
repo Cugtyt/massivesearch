@@ -41,6 +41,9 @@ indexs:
 aggregator:
   type: book_aggregator
   ...
+ai_client:
+  type: azure_openai
+  ...
 ```
 
 3. Use SpecBuilder to register related index, search engine, and aggregator, example in [examples/book/main.py](examples/book/main.py):
@@ -54,6 +57,7 @@ book_builder.register_search_engine("book_text_search", PandasTextSearchEngine)
 book_builder.register_search_engine("book_price_search", PandasNumberSearchEngine)
 
 book_builder.register_aggregator_type("book_aggregator", PandasAggregator)
+book_builder.register_ai_client_type("azure_openai", AzureOpenAIClient)
 ```
 
 4. Load data, ai model and use Worker to search, example in [examples/book/main.py](examples/book/main.py):
@@ -63,10 +67,7 @@ with Path("./examples/book/book_spec.yaml").open() as file:
     spec_file = yaml.safe_load(file)
 
 book_builder.include(spec_file)
-worker = Worker(
-    book_builder.spec,
-    model_client=AzureOpenAIClient(temperature=0),
-)
+worker = Worker(book_builder.spec)
 agg_result = worker.execute(
     "I want to buy a book about prince or lord, and I only have 20 dollars.",
 )
