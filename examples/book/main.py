@@ -1,15 +1,14 @@
 """Book search example."""  # noqa: INP001
 
-import functools
 import logging
 from pathlib import Path
 
-import pandas as pd
 import yaml
 
 from massivesearch.ext.pandas.aggregator import PandasAggregator
 from massivesearch.ext.pandas.number import PandasNumberSearchEngine
 from massivesearch.ext.pandas.text import PandasTextSearchEngine
+from massivesearch.ext.pandas.types import PandasAggregatorConfig
 from massivesearch.index.number import BasicNumberIndex
 from massivesearch.index.text import BasicTextIndex
 from massivesearch.model.azure_openai import AzureOpenAIClient
@@ -25,42 +24,52 @@ book_builder = SpecBuilder()
 
 @book_builder.index("text_index")
 class BookTextIndex(BasicTextIndex):
-    """Book text index."""
+    """Book text index.
+
+    The decorator is working same as the following code:
+    ```python
+    book_builder.register_index("text_index", BasicTextIndex)
+    ```
+    """
 
 
 @book_builder.index("number_index")
 class BookPriceIndex(BasicNumberIndex):
-    """Book price index."""
+    """Book price index.
 
-
-@functools.lru_cache(maxsize=1)
-def load_df() -> pd.DataFrame:
-    """Load book data from a CSV file. Caches the result."""
-    file_path: str = "examples/book/books.csv"
-    logger.info("Loading data from %s...", file_path)
-    return pd.read_csv(file_path)
-
-
-class BookDataMixin:
-    """Mixin class to provide book data loading."""
-
-    def load_df(self) -> pd.DataFrame:
-        """Load book data using the cached function."""
-        return load_df()
+    The decorator is working same as the following code:
+    ```python
+    book_builder.register_index("number_index", BasicNumberIndex)
+    ```
+    """
 
 
 @book_builder.search_engine("book_text_search")
-class BookTextSearchEngine(BookDataMixin, PandasTextSearchEngine):
-    """Book text search engine."""
+class BookTextSearchEngine(PandasTextSearchEngine):
+    """Book text search engine.
+
+    The decorator is working same as the following code:
+    ```python
+    book_builder.register_search_engine("book_text_search", PandasTextSearchEngine)
+    ```
+    """
 
 
 @book_builder.search_engine("book_price_search")
-class BookPriceSearchEngine(BookDataMixin, PandasNumberSearchEngine):
-    """Book price search engine."""
+class BookPriceSearchEngine(PandasNumberSearchEngine):
+    """Book price search engine.
+
+    The decorator is working same as the following code:
+    ```python
+    book_builder.register_search_engine("book_price_search", PandasNumberSearchEngine)
+    ```
+    """
 
 
-class BookAggregator(BookDataMixin, PandasAggregator):
+class BookAggregator(PandasAggregator):
     """Book aggregator."""
+
+    config: PandasAggregatorConfig
 
 
 def main() -> None:
@@ -81,7 +90,9 @@ def main() -> None:
     for result in execute_results:
         logger.info(result.query)
 
-    aggregator = BookAggregator()
+    aggregator = BookAggregator(
+        config=PandasAggregatorConfig(file_path="./examples/book/books.csv"),
+    )
     agg_result = aggregator.aggregate(execute_results)
     logger.info("Books:")
     logger.info(agg_result)

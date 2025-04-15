@@ -175,6 +175,25 @@ class SpecBuilder:
 
         return decorator
 
+    def register_index(self, name: str, index: type[BaseIndex]) -> None:
+        """Add a new index to the spec."""
+        if not name:
+            msg = "Name cannot be empty."
+            raise ValueError(msg)
+        if not index:
+            msg = "Index cannot be empty."
+            raise ValueError(msg)
+
+        if issubclass(index, BaseIndex) is False:
+            msg = f"Index '{name}' is not a subclass of BaseIndex."
+            raise TypeError(msg)
+
+        if name in self.registered_indexs:
+            msg = f"Index with name '{name}' already exists."
+            raise ValueError(msg)
+
+        self.registered_indexs[name] = index
+
     def search_engine(self, name: str) -> type[BaseSearchEngine]:
         """Register a search engine with a given key name."""
 
@@ -187,6 +206,29 @@ class SpecBuilder:
             return cls
 
         return decorator
+
+    def register_search_engine(
+        self,
+        name: str,
+        search_engine: type[BaseSearchEngine],
+    ) -> None:
+        """Add a new search engine to the spec."""
+        if not name:
+            msg = "Name cannot be empty."
+            raise ValueError(msg)
+        if not search_engine:
+            msg = "Search engine cannot be empty."
+            raise ValueError(msg)
+
+        if issubclass(search_engine, BaseSearchEngine) is False:
+            msg = f"Search engine '{name}' is not a subclass of BaseSearchEngine."
+            raise TypeError(msg)
+
+        if name in self.registered_search_engines:
+            msg = f"Search engine with name '{name}' already exists."
+            raise ValueError(msg)
+
+        self.registered_search_engines[name] = search_engine
 
     def __or__(self, other: "SpecBuilder") -> "SpecBuilder":
         """Combine two SpecBuilders using the | operator."""

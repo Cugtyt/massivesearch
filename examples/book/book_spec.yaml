@@ -9,6 +9,7 @@ title:
     type: book_text_search
     config:
       matching_strategy: "contains"
+      file_path: examples/book/books.csv
       column_name: title
 description:
   index:
@@ -21,6 +22,7 @@ description:
     type: book_text_search
     config:
       matching_strategy: "contains"
+      file_path: examples/book/books.csv
       column_name: description
 price:
   index:
@@ -35,4 +37,5 @@ price:
   search_engine:
     type: book_price_search
     config:
+      file_path: examples/book/books.csv
       column_name: price

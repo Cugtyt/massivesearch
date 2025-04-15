@@ -1,19 +1,19 @@
 """Aggregator for pandas DataFrames."""
 
-from abc import ABC, abstractmethod
-
 import pandas as pd
 
-from massivesearch.ext.pandas.types import PandasAggregatorResult
+from massivesearch.aggregator import Aggregator
+from massivesearch.ext.pandas.types import (
+    PandasAggregatorConfig,
+    PandasAggregatorResult,
+)
 from massivesearch.worker import WorkerExecuteResult
 
 
-class PandasAggregator(ABC):
+class PandasAggregator(Aggregator):
     """Aggregator class."""
 
-    @abstractmethod
-    def load_df(self) -> pd.DataFrame:
-        """Load data for aggregation."""
+    config: PandasAggregatorConfig
 
     def aggregate(
         self,
@@ -32,7 +32,7 @@ class PandasAggregator(ABC):
                 if len(common_indices) > 0:
                     all_common_indices.append(common_indices)
 
-        book_df = self.load_df()
+        book_df = pd.read_csv(self.config.file_path)
         if all_common_indices:
             combined_indices = pd.Index([]).union(*all_common_indices)
             unique_indices = combined_indices[

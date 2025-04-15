@@ -1,9 +1,10 @@
 """Types for pandas search engine."""
 
-from abc import ABC, abstractmethod
+from abc import ABC
 
 import pandas as pd
 
+from massivesearch.aggregator import AggregatorConfig
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineConfig,
@@ -18,6 +19,7 @@ class PandasSearchResultIndex(pd.Index, BaseSearchResultIndex):
 class PandasBaseSearchEngineConfig(BaseSearchEngineConfig):
     """Config for pandas search engine."""
 
+    file_path: str
     column_name: str
 
 
@@ -26,10 +28,16 @@ class PandasBaseSearchEngine(BaseSearchEngine, ABC):
 
     config: PandasBaseSearchEngineConfig
 
-    @abstractmethod
     def load_df(self) -> pd.DataFrame:
         """Load data for the search engine."""
+        return pd.read_csv(self.config.file_path)
 
 
 class PandasAggregatorResult(pd.DataFrame):
     """Aggregator result for pandas DataFrames."""
+
+
+class PandasAggregatorConfig(AggregatorConfig):
+    """Config for pandas aggregator."""
+
+    file_path: str
