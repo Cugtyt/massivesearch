@@ -155,6 +155,16 @@ def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
         msg = f"{cls.__name__} search method must have an arguments attribute."
         raise AttributeError(msg)
 
+    search_parameters = cls.search.__code__.co_varnames[
+        : cls.search.__code__.co_argcount
+    ]
+    if search_parameters != ("self", "arguments"):
+        msg = (
+            f"{cls.__name__} search method must only have 'self' and "
+            f"'arguments' as parameters."
+        )
+        raise TypeError(msg)
+
     if getattr(cls.search, "__isabstractmethod__", False):
         msg = f"{cls.__name__} search method must not be abstract."
         raise TypeError(msg)
