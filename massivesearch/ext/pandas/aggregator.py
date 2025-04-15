@@ -2,18 +2,17 @@
 
 import pandas as pd
 
-from massivesearch.aggregator import Aggregator
+from massivesearch.aggregator import BaseAggregator
 from massivesearch.ext.pandas.types import (
-    PandasAggregatorConfig,
     PandasAggregatorResult,
 )
 from massivesearch.worker import WorkerSearchResult
 
 
-class PandasAggregator(Aggregator):
+class PandasAggregator(BaseAggregator):
     """Aggregator class."""
 
-    config: PandasAggregatorConfig
+    file_path: str
 
     def aggregate(
         self,
@@ -32,7 +31,7 @@ class PandasAggregator(Aggregator):
                 if len(common_indices) > 0:
                     all_common_indices.append(common_indices)
 
-        book_df = pd.read_csv(self.config.file_path)
+        book_df = pd.read_csv(self.file_path)
         if all_common_indices:
             combined_indices = pd.Index([]).union(*all_common_indices)
             unique_indices = combined_indices[

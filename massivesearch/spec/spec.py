@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel
 
+from massivesearch.aggregator.base import BaseAggregator
 from massivesearch.index.base import BaseIndex
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
@@ -9,7 +10,7 @@ from massivesearch.search_engine.base import (
 )
 
 
-class SpecUnit(BaseModel):
+class SpecIndexUnit(BaseModel):
     """Spec unit class."""
 
     index: BaseIndex
@@ -20,7 +21,8 @@ class SpecUnit(BaseModel):
 class Spec(BaseModel):
     """Spec class."""
 
-    items: dict[str, SpecUnit]
+    indexs: dict[str, SpecIndexUnit]
+    aggregator: BaseAggregator
 
     prompt_message: str
     query_model: type[BaseModel]

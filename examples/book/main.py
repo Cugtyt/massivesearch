@@ -8,7 +8,6 @@ import yaml
 from massivesearch.ext.pandas.aggregator import PandasAggregator
 from massivesearch.ext.pandas.number import PandasNumberSearchEngine
 from massivesearch.ext.pandas.text import PandasTextSearchEngine
-from massivesearch.ext.pandas.types import PandasAggregatorConfig
 from massivesearch.index.number import BasicNumberIndex
 from massivesearch.index.text import BasicTextIndex
 from massivesearch.model.azure_openai import AzureOpenAIClient
@@ -66,10 +65,10 @@ class BookPriceSearchEngine(PandasNumberSearchEngine):
     """
 
 
-class BookAggregator(PandasAggregator):
-    """Book aggregator."""
-
-    config: PandasAggregatorConfig
+book_builder.register_aggregator(
+    "book_aggregator",
+    PandasAggregator,
+)
 
 
 def main() -> None:
@@ -81,9 +80,6 @@ def main() -> None:
     worker = Worker(
         book_builder.spec,
         model_client=AzureOpenAIClient(temperature=0),
-        aggregator=BookAggregator(
-            config=PandasAggregatorConfig(file_path="./examples/book/books.csv"),
-        ),
     )
     agg_result = worker.execute(
         "I want to buy a book about prince or lord, and I only have 20 dollars.",

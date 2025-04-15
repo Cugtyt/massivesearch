@@ -1,31 +1,27 @@
-title:
-  index:
+indexs:
+  - name: title
     type: text_index
     description: The title of the book.
     examples:
       - "The Great Gatsby"
       - "To Kill a Mockingbird"
-  search_engine:
-    type: book_text_search
-    config:
+    search_engine:
+      type: book_text_search
       matching_strategy: "contains"
       file_path: examples/book/books.csv
       column_name: title
-description:
-  index:
+  - name: description
     type: text_index
     description: A detailed description of the book.
     examples:
       - "A novel set in the Roaring Twenties."
       - "A story about racial injustice in the Deep South."
-  search_engine:
-    type: book_text_search
-    config:
+    search_engine:
+      type: book_text_search
       matching_strategy: "contains"
       file_path: examples/book/books.csv
       column_name: description
-price:
-  index:
+  - name: price
     type: number_index
     description: The price of the book.
     range:
@@ -34,8 +30,11 @@ price:
     examples:
       - 19.99
       - 29.99
-  search_engine:
-    type: book_price_search
-    config:
+    search_engine:
+      type: book_price_search
       file_path: examples/book/books.csv
       column_name: price
+aggregator:
+  type: book_aggregator
+  file_path: examples/book/books.csv
+  output_path: examples/book/aggregated_books.csv

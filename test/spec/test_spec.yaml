@@ -1,37 +1,31 @@
-description:
-  index:
+indexs:
+  - name: description
     type: text_index
     description: A detailed description of the product.
     examples:
       - "This is clothes for all seasons."
       - "This is a high-performance laptop."
-  search_engine:
-    type: text_search
-    config:
+    search_engine:
+      type: text_search
       matching_strategy: "contains"
-target_audience:
-  index:
+  - name: target_audience
     type: text_index
     description: The target audience for the product.
     examples:
       - "Teens"
       - "Adults"
       - "This is for everyone."
-  search_engine:
-    type: text_search
-    config:
+    search_engine:
+      type: text_search
       matching_strategy: "exact"
-is_available:
-  index:
+  - name: is_available
     type: boolean_index
     description: Indicates if the product is available for purchase.
-  search_engine:
-    type: "boolean_search"
-    config:
+    search_engine:
+      type: "boolean_search"
       true_value: "available"
       false_value: "not_available"
-price:
-  index:
+  - name: price
     type: number_index
     description: The price of the product.
     range:
@@ -41,25 +35,21 @@ price:
       - 19.99
       - 999.99
       - 0.00
-  search_engine:
-    type: number_search
-date:
-  index:
+    search_engine:
+      type: number_search
+  - name: date
     type: date_index
     description: The date when the product was added.
     examples:
       - "2023-01-01"
       - "2023-10-15"
-  search_engine:
-    type: "date_search"
-    config:
+    search_engine:
+      type: "date_search"
       format: "YYYY-MM-DD"
-image:
-  index:
+  - name: image
     type: vector_index
     description: Product images, use language to query the images, like "red dress".
-  search_engine:
-    type: vector_search
-    config:
+    search_engine:
+      type: vector_search
       top_k: 5
       distance_metric: "cosine"

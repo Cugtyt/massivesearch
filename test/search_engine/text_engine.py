@@ -7,7 +7,6 @@ from pydantic import Field
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
-    BaseSearchEngineConfig,
     BaseSearchResultIndex,
 )
 from massivesearch.spec import (
@@ -15,12 +14,6 @@ from massivesearch.spec import (
 )
 
 spec_builder = SpecBuilder()
-
-
-class TextSearchEngineConfig(BaseSearchEngineConfig):
-    """Config for text search engines."""
-
-    matching_strategy: Literal["exact", "contains", "starts_with", "ends_with"]
 
 
 class TextSearchEngineArguments(BaseSearchEngineArguments):
@@ -35,7 +28,7 @@ class TextSearchEngineArguments(BaseSearchEngineArguments):
 class TextSearchEngine(BaseSearchEngine):
     """Text search engine."""
 
-    config: TextSearchEngineConfig
+    matching_strategy: Literal["exact", "contains", "starts_with", "ends_with"]
 
     def search(self, arguments: TextSearchEngineArguments) -> BaseSearchResultIndex:
         """Search for text values."""

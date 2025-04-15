@@ -2,28 +2,24 @@
 
 from abc import abstractmethod
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from massivesearch.search_engine.base import BaseSearchResultIndex
 
 WorkerSearchResult = list[dict[str, BaseSearchResultIndex]]
 
 
-class AggregatorResult:
+class BaseAggregatorResult:
     """Aggregator result."""
 
 
-class AggregatorConfig(BaseModel):
-    """Aggregator result config."""
-
-
-class Aggregator(BaseModel):
+class BaseAggregator(BaseModel):
     """Aggregator class."""
 
-    config: AggregatorConfig
+    model_config = ConfigDict(extra="ignore")
 
     @abstractmethod
-    def aggregate(self, worker_results: WorkerSearchResult) -> AggregatorResult:
+    def aggregate(self, worker_results: WorkerSearchResult) -> BaseAggregatorResult:
         """Aggregate the search results."""
         msg = "Subclasses must implement this method."
         raise NotImplementedError(msg)

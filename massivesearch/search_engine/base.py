@@ -2,11 +2,7 @@
 
 from abc import abstractmethod
 
-from pydantic import BaseModel
-
-
-class BaseSearchEngineConfig(BaseModel):
-    """Config for search engines."""
+from pydantic import BaseModel, ConfigDict
 
 
 class BaseSearchEngineArguments(BaseModel):
@@ -20,7 +16,7 @@ class BaseSearchResultIndex:
 class BaseSearchEngine(BaseModel):
     """Base class for search engines."""
 
-    config: BaseSearchEngineConfig
+    model_config = ConfigDict(extra="ignore")
 
     @abstractmethod
     def search(self, arguments: BaseSearchEngineArguments) -> BaseSearchResultIndex:

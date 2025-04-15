@@ -1,9 +1,8 @@
 """Aggregator module for massivesearch."""
 
 from massivesearch.aggregator.base import (
-    Aggregator,
-    AggregatorConfig,
-    AggregatorResult,
+    BaseAggregator,
+    BaseAggregatorResult,
 )
 
-__all__ = ["Aggregator", "AggregatorConfig", "AggregatorResult"]
+__all__ = ["BaseAggregator", "BaseAggregatorResult"]

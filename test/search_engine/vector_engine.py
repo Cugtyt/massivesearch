@@ -5,7 +5,6 @@ from pydantic import Field
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
-    BaseSearchEngineConfig,
     BaseSearchResultIndex,
 )
 from massivesearch.spec import (
@@ -13,19 +12,6 @@ from massivesearch.spec import (
 )
 
 spec_builder = SpecBuilder()
-
-
-class VectorSearchEngineConfig(BaseSearchEngineConfig):
-    """Config for vector search engines."""
-
-    top_k: int = Field(
-        default=5,
-        description="Number of top results to return from the vector search engine.",
-    )
-    distance_metric: str = Field(
-        default="cosine",
-        description="Distance metric to use for vector search.",
-    )
 
 
 class VectorSearchEngineArguments(BaseSearchEngineArguments):
@@ -40,7 +26,14 @@ class VectorSearchEngineArguments(BaseSearchEngineArguments):
 class VectorSearchEngine(BaseSearchEngine):
     """Vector search engine."""
 
-    config: VectorSearchEngineConfig
+    top_k: int = Field(
+        default=5,
+        description="Number of top results to return from the vector search engine.",
+    )
+    distance_metric: str = Field(
+        default="cosine",
+        description="Distance metric to use for vector search.",
+    )
 
     def search(self, arguments: VectorSearchEngineArguments) -> BaseSearchResultIndex:
         """Search for vector values."""

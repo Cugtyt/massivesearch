@@ -61,7 +61,7 @@ class PandasNumberSearchEngine(PandasBaseSearchEngine):
         if len(arguments.number_ranges) == 0:
             return data.index
 
-        data_series = data[self.config.column_name]
+        data_series = data[self.column_name]
         masks = []
 
         for number_range in arguments.number_ranges:

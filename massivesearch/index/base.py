@@ -2,11 +2,13 @@
 
 from abc import ABC
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class BaseIndex(BaseModel, ABC):
     """Base class for index schemas."""
+
+    model_config = ConfigDict(extra="ignore")
 
     description: str
     examples: list | None = None

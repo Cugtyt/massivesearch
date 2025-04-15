@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field, model_validator
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
-    BaseSearchEngineConfig,
     BaseSearchResultIndex,
 )
 from massivesearch.spec import (
@@ -16,12 +15,6 @@ from massivesearch.spec import (
 )
 
 spec_builder = SpecBuilder()
-
-
-class DateSearchEngineConfig(BaseSearchEngineConfig):
-    """Config for date search engine."""
-
-    format: str = "%Y-%m-%d"
 
 
 class DateRange(BaseModel):
@@ -70,7 +63,7 @@ class DateSearchEngineArguments(BaseSearchEngineArguments):
 class DateSearchEngine(BaseSearchEngine):
     """date search engine."""
 
-    config: DateSearchEngineConfig
+    format: str = "%Y-%m-%d"
 
     def search(self, arguments: DateSearchEngineArguments) -> BaseSearchResultIndex:
         """Search for date values."""

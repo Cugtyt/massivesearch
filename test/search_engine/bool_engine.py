@@ -7,19 +7,11 @@ from pydantic import Field, model_validator
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
-    BaseSearchEngineConfig,
     BaseSearchResultIndex,
 )
 from massivesearch.spec import SpecBuilder
 
 spec_builder = SpecBuilder()
-
-
-class BoolSearchEngineConfig(BaseSearchEngineConfig):
-    """Config for boolean search engines."""
-
-    true_value: str = "true"
-    false_value: str = "false"
 
 
 class BoolSearchEngineArguments(BaseSearchEngineArguments):
@@ -50,8 +42,6 @@ class BoolSearchEngineArguments(BaseSearchEngineArguments):
 @spec_builder.search_engine("boolean_search")
 class BoolSearchEngine(BaseSearchEngine):
     """Boolean search engine."""
-
-    config: BoolSearchEngineConfig
 
     def search(self, arguments: BoolSearchEngineArguments) -> BaseSearchResultIndex:
         """Search for boolean values."""

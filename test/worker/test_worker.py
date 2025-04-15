@@ -2,11 +2,15 @@
 
 import json
 from pathlib import Path
+from unittest.mock import MagicMock
 
+import pytest
 import yaml
+from pydantic import ValidationError
 
 from massivesearch.model.azure_openai import AzureOpenAIClient
 from massivesearch.worker import Worker
+from test.aggregator import TestAggregator
 from test.index import (
     bool_index_spec_builder,
     date_index_spec_builder,
@@ -44,6 +48,11 @@ def test_worker_build_query() -> None:
     )
     builder.include(valid_spec)
 
+    with pytest.raises(ValidationError):
+        _ = builder.spec
+
+    builder.set_aggregator(TestAggregator())
+
     worker = Worker(
         spec=builder.spec,
         model_client=AzureOpenAIClient(temperature=0),
@@ -80,6 +89,8 @@ def test_worker_build_complex_query() -> None:
         | vector_search_engine_spec_builder
     )
     builder.include(valid_spec)
+
+    builder.set_aggregator(TestAggregator())
     worker = Worker(
         spec=builder.spec,
         model_client=AzureOpenAIClient(temperature=0),
@@ -114,3 +125,41 @@ def test_worker_build_complex_query() -> None:
     if "book" not in query_to_string:
         msg = "Expected 'book' to be in the query."
         raise ValueError(msg)
+
+
+def test_worker_execute() -> None:
+    """Test worker execute."""
+    spec_file_path = Path("./test/spec/test_spec.yaml")
+
+    with spec_file_path.open() as file:
+        valid_spec = yaml.safe_load(file)
+
+    builder = (
+        bool_index_spec_builder
+        | date_index_spec_builder
+        | number_index_spec_builder
+        | text_index_spec_builder
+        | vector_index_spec_builder
+        | bool_search_engine_spec_builder
+        | date_search_engine_spec_builder
+        | number_search_engine_spec_builder
+        | text_search_engine_spec_builder
+        | vector_search_engine_spec_builder
+    )
+    builder.include(valid_spec)
+
+    builder.set_aggregator(TestAggregator())
+    fake_model_client = MagicMock()
+    fake_model_client.response.return_value = {
+        "queries": [],
+    }
+
+    worker = Worker(
+        spec=builder.spec,
+        model_client=fake_model_client,
+    )
+
+    result = worker.execute("test")
+    if result is not True:
+        msg = "Expected True, got {result}."
+        raise ValueError(msg.format(result=result))

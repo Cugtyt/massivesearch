@@ -6,16 +6,9 @@ from pydantic import Field
 
 from massivesearch.ext.pandas.types import (
     PandasBaseSearchEngine,
-    PandasBaseSearchEngineConfig,
     PandasSearchResultIndex,
 )
 from massivesearch.search_engine import BaseSearchEngineArguments
-
-
-class PandasTextSearchEngineConfig(PandasBaseSearchEngineConfig):
-    """Config for text search engines."""
-
-    matching_strategy: Literal["exact", "contains", "starts_with", "ends_with"]
 
 
 class PandasTextSearchEngineArguments(BaseSearchEngineArguments):
@@ -29,7 +22,7 @@ class PandasTextSearchEngineArguments(BaseSearchEngineArguments):
 class PandasTextSearchEngine(PandasBaseSearchEngine):
     """Text search engine."""
 
-    config: PandasTextSearchEngineConfig
+    matching_strategy: Literal["exact", "contains", "starts_with", "ends_with"]
 
     def search(
         self,
@@ -37,9 +30,9 @@ class PandasTextSearchEngine(PandasBaseSearchEngine):
     ) -> PandasSearchResultIndex:
         """Search for text values."""
         data = self.load_df()
-        data_series_lower = data[self.config.column_name].str.lower()
+        data_series_lower = data[self.column_name].str.lower()
         keywords_lower = [keyword.lower() for keyword in arguments.keywords]
-        match self.config.matching_strategy:
+        match self.matching_strategy:
             case "exact":
                 indices = data.index[data_series_lower.isin(keywords_lower)]
             case "contains":

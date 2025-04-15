@@ -2,7 +2,7 @@
 
 from pydantic import ValidationError
 
-from massivesearch.aggregator import Aggregator, AggregatorResult
+from massivesearch.aggregator import BaseAggregatorResult
 from massivesearch.model.base import BaseModelClient
 from massivesearch.search_engine.base import BaseSearchResultIndex
 from massivesearch.spec import Spec
@@ -17,13 +17,11 @@ class Worker:
         self,
         spec: Spec,
         model_client: BaseModelClient,
-        aggregator: Aggregator,
     ) -> None:
         """Initialize the worker with spec."""
         self.spec = spec
         self.model_client = model_client
         self.last_search_query: list[dict] = []
-        self.aggregator = aggregator
 
     def _build_messages(self, query: str) -> list[dict[str, str]]:
         """Build the prompt for the spec."""
@@ -48,7 +46,7 @@ class Worker:
         try:
             self.spec.query_model(**response)
             self.last_search_query = response["queries"]
-            return self.last_search_query
+            return response["queries"]
         except KeyError:
             msg = "Failed to parse response: 'queries' key not found."
             raise ValueError(msg) from None
@@ -65,7 +63,7 @@ class Worker:
         execute_results = []
         for search_query in search_queries:
             result = {}
-            for name, spec_unit in self.spec.items.items():
+            for name, spec_unit in self.spec.indexs.items():
                 search_engine_arguments = spec_unit.search_engine_arguments_type(
                     **search_query[name],
                 )
@@ -77,7 +75,6 @@ class Worker:
 
         return execute_results
 
-    def execute(self, query: str) -> AggregatorResult:
+    def execute(self, query: str) -> BaseAggregatorResult:
         """Execute the query."""
-        search_results = self.search(query)
-        return self.aggregator.aggregate(self.search(query))
+        return self.spec.aggregator.aggregate(self.search(query))

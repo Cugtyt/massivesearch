@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field, model_validator
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
-    BaseSearchEngineConfig,
     BaseSearchResultIndex,
 )
 from massivesearch.spec import (
@@ -15,10 +14,6 @@ from massivesearch.spec import (
 )
 
 spec_builder = SpecBuilder()
-
-
-class NumberSearchEngineConfig(BaseSearchEngineConfig):
-    """Config for number search engine."""
 
 
 class NumberRange(BaseModel):
@@ -58,8 +53,6 @@ class NumberSearchEngineArguments(BaseSearchEngineArguments):
 @spec_builder.search_engine("number_search")
 class NumberSearchEngine(BaseSearchEngine):
     """Number search engine."""
-
-    config: NumberSearchEngineConfig
 
     def search(self, arguments: NumberSearchEngineArguments) -> BaseSearchResultIndex:
         """Search for numbers."""

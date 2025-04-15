@@ -4,9 +4,10 @@ from inspect import signature
 
 from pydantic import BaseModel, create_model
 
+from massivesearch.aggregator.base import BaseAggregator
 from massivesearch.index.base import BaseIndex
 from massivesearch.search_engine.base import BaseSearchEngine
-from massivesearch.spec.spec import Spec, SpecUnit
+from massivesearch.spec.spec import Spec, SpecIndexUnit
 from massivesearch.spec.validator import spec_validator, validate_search_engine
 
 STSTEM_PROMPT_TEMPLATE = """Fill the search engine query arguments
@@ -50,16 +51,22 @@ class SpecBuilder:
         self,
         indexs: dict[str, type[BaseIndex]] | None = None,
         search_engines: dict[str, type[BaseSearchEngine]] | None = None,
+        aggregators: dict[str, type[BaseAggregator]] | None = None,
     ) -> None:
         """Initialize the SpecBuilder with an empty specification."""
-        self.spec_units: dict[str, SpecUnit] = {}
+        self.spec_units: dict[str, SpecIndexUnit] = {}
         self.registered_indexs: dict[str, type[BaseIndex]] = {}
         self.registered_search_engines: dict[str, type[BaseSearchEngine]] = {}
+        self.registered_aggregators: dict[str, type[BaseAggregator]] = {}
 
         for name, index in (indexs or {}).items():
-            self.index(name)(index)
+            self.register_index(name, index)
         for name, search_engine in (search_engines or {}).items():
-            self.search_engine(name)(search_engine)
+            self.register_search_engine(name, search_engine)
+        for name, aggregator in (aggregators or {}).items():
+            self.register_aggregator(name, aggregator)
+
+        self.spec_aggregator: BaseAggregator | None = None
 
     def include(self, spec: dict) -> None:
         """Include a dictionary of schemas to the spec."""
@@ -67,20 +74,36 @@ class SpecBuilder:
             msg = "No schemas available to include."
             raise ValueError(msg)
 
-        spec_validator(spec, self.registered_indexs, self.registered_search_engines)
+        spec_validator(
+            spec,
+            self.registered_indexs,
+            self.registered_search_engines,
+            self.registered_aggregators,
+        )
 
-        for name, schema in spec.items():
-            index_schema = schema.get("index")
-            index_type = index_schema.get("type")
-            search_engine = schema.get("search_engine")
+        index_spec = spec.get("indexs")
+
+        for index in index_spec:
+            name = index.get("name")
+            index_type = index.get("type")
+            search_engine = index.get("search_engine")
             search_engine_type = search_engine.get("type")
-            self.add(
+            self.add_index(
                 name,
-                self.registered_indexs[index_type](**index_schema),
-                self.registered_search_engines[search_engine_type](**search_engine),
+                self.registered_indexs[index_type](**index),
+                self.registered_search_engines[search_engine_type](
+                    **search_engine,
+                ),
             )
 
-    def add(
+        aggregator_spec = spec.get("aggregator")
+        if aggregator_spec:
+            aggregator_type = aggregator_spec.get("type")
+            self.set_aggregator(
+                self.registered_aggregators[aggregator_type](**aggregator_spec),
+            )
+
+    def add_index(
         self,
         name: str,
         index: BaseIndex,
@@ -101,11 +124,26 @@ class SpecBuilder:
             msg = f"Spec with name '{name}' already exists."
             raise ValueError(msg)
 
-        self.spec_units[name] = SpecUnit(
+        self.spec_units[name] = SpecIndexUnit(
             index=index,
             search_engine=search_engine,
             search_engine_arguments_type=self._get_arguments_type(search_engine),
         )
+
+    def set_aggregator(
+        self,
+        aggregator: BaseAggregator,
+    ) -> None:
+        """Set the aggregator for the spec."""
+        if not aggregator:
+            msg = "Aggregator cannot be empty."
+            raise ValueError(msg)
+
+        if not isinstance(aggregator, BaseAggregator):
+            msg = "Aggregator must be an instance of BaseAggregator."
+            raise TypeError(msg)
+
+        self.spec_aggregator = aggregator
 
     def build_prompt(self) -> str:
         """Build the prompt for the spec."""
@@ -157,7 +195,8 @@ class SpecBuilder:
     def spec(self) -> Spec:
         """Return the spec."""
         return Spec(
-            items=self.spec_units,
+            indexs=self.spec_units,
+            aggregator=self.spec_aggregator,
             prompt_message=self.build_prompt(),
             query_model=self.build_format(),
         )
@@ -230,6 +269,41 @@ class SpecBuilder:
 
         self.registered_search_engines[name] = search_engine
 
+    def aggregator(self, name: str) -> type[BaseAggregator]:
+        """Register an aggregator with a given key name."""
+
+        def decorator(cls: type[BaseAggregator]) -> type:
+            if name in self.registered_aggregators:
+                msg = f"Aggregator with name '{name}' is already registered."
+                raise ValueError(msg)
+            self.registered_aggregators[name] = cls
+            return cls
+
+        return decorator
+
+    def register_aggregator(
+        self,
+        name: str,
+        aggregator: type[BaseAggregator],
+    ) -> None:
+        """Add a new aggregator to the spec."""
+        if not name:
+            msg = "Name cannot be empty."
+            raise ValueError(msg)
+        if not aggregator:
+            msg = "Aggregator cannot be empty."
+            raise ValueError(msg)
+
+        if issubclass(aggregator, BaseAggregator) is False:
+            msg = f"Aggregator '{name}' is not a subclass of BaseAggregator."
+            raise TypeError(msg)
+
+        if name in self.registered_aggregators:
+            msg = f"Aggregator with name '{name}' already exists."
+            raise ValueError(msg)
+
+        self.registered_aggregators[name] = aggregator
+
     def __or__(self, other: "SpecBuilder") -> "SpecBuilder":
         """Combine two SpecBuilders using the | operator."""
         if not isinstance(other, SpecBuilder):
@@ -261,6 +335,20 @@ class SpecBuilder:
             )
             raise ValueError(msg)
 
+        overlap_registered_aggregators = set(
+            self.registered_aggregators.keys(),
+        ) & set(other.registered_aggregators.keys())
+        if overlap_registered_aggregators:
+            msg = (
+                "SpecBuilder has overlapping registered_aggregators: "
+                f"{overlap_registered_aggregators}."
+            )
+            raise ValueError(msg)
+
+        if self.spec_aggregator and other.spec_aggregator:
+            msg = "SpecBuilder has overlapping spec_aggregators."
+            raise ValueError(msg)
+
         combined_spec_units = {**self.spec_units, **other.spec_units}
         combined_registered_indexs = {
             **self.registered_indexs,
@@ -270,10 +358,18 @@ class SpecBuilder:
             **self.registered_search_engines,
             **other.registered_search_engines,
         }
+        combined_registered_aggregators = {
+            **self.registered_aggregators,
+            **other.registered_aggregators,
+        }
         combined_spec_builder = SpecBuilder()
         combined_spec_builder.spec_units = combined_spec_units
         combined_spec_builder.registered_indexs = combined_registered_indexs
         combined_spec_builder.registered_search_engines = (
             combined_registered_search_engines
+        )
+        combined_spec_builder.registered_aggregators = combined_registered_aggregators
+        combined_spec_builder.spec_aggregator = (
+            self.spec_aggregator or other.spec_aggregator
         )
         return combined_spec_builder
