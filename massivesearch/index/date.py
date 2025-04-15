@@ -1,12 +1,9 @@
 """Date Index Schema."""
 
-from massivesearch.spec import BaseIndex, SpecBuilder
-
-spec_builder = SpecBuilder()
+from massivesearch.index.base import BaseIndex
 
 
-@spec_builder.index("date_index")
-class DateIndex(BaseIndex):
+class BasicDateIndex(BaseIndex):
     """Schema for date index."""
 
     examples: list[str]

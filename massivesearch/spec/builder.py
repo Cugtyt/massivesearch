@@ -4,8 +4,8 @@ from inspect import signature
 
 from pydantic import BaseModel, create_model
 
-from massivesearch.spec.base_index import BaseIndex
-from massivesearch.spec.base_search_engine import BaseSearchEngine
+from massivesearch.index.base import BaseIndex
+from massivesearch.search_engine.base import BaseSearchEngine
 from massivesearch.spec.spec import Spec, SpecUnit
 from massivesearch.spec.validator import spec_validator, validate_search_engine
 

@@ -10,15 +10,27 @@ import yaml
 from massivesearch.ext.pandas.aggregator import PandasAggregator
 from massivesearch.ext.pandas.number import PandasNumberSearchEngine
 from massivesearch.ext.pandas.text import PandasTextSearchEngine
-from massivesearch.index import number_index_spec_builder, text_index_spec_builder
+from massivesearch.index.number import BasicNumberIndex
+from massivesearch.index.text import BasicTextIndex
 from massivesearch.model.azure_openai import AzureOpenAIClient
+from massivesearch.spec import SpecBuilder
 from massivesearch.worker import Worker
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-book_builder = text_index_spec_builder | number_index_spec_builder
+book_builder = SpecBuilder()
+
+
+@book_builder.index("text_index")
+class BookTextIndex(BasicTextIndex):
+    """Book text index."""
+
+
+@book_builder.index("number_index")
+class BookPriceIndex(BasicNumberIndex):
+    """Book price index."""
 
 
 @functools.lru_cache(maxsize=1)

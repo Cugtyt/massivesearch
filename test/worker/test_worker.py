@@ -5,22 +5,22 @@ from pathlib import Path
 
 import yaml
 
-from massivesearch.index import (
+from massivesearch.model.azure_openai import AzureOpenAIClient
+from massivesearch.worker import Worker
+from test.index import (
     bool_index_spec_builder,
     date_index_spec_builder,
     number_index_spec_builder,
     text_index_spec_builder,
     vector_index_spec_builder,
 )
-from massivesearch.model.azure_openai import AzureOpenAIClient
-from massivesearch.search_engine import (
+from test.search_engine import (
     bool_search_engine_spec_builder,
     date_search_engine_spec_builder,
     number_search_engine_spec_builder,
     text_search_engine_spec_builder,
     vector_search_engine_spec_builder,
 )
-from massivesearch.worker import Worker
 
 
 def test_worker_build_query() -> None:

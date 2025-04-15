@@ -1,10 +1,8 @@
 """Boolean Index Schema."""
 
-from massivesearch.spec import BaseIndex, SpecBuilder
 
-spec_builder = SpecBuilder()
+from massivesearch.index.base import BaseIndex
 
 
-@spec_builder.index("boolean_index")
-class BoolIndex(BaseIndex):
+class BasicBoolIndex(BaseIndex):
     """Schema for boolean index."""

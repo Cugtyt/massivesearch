@@ -4,13 +4,15 @@ from typing import Self
 
 from pydantic import BaseModel, Field, model_validator
 
-from massivesearch.spec.base_search_engine import (
+from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
     BaseSearchResultIndex,
 )
-from massivesearch.spec.builder import SpecBuilder
+from massivesearch.spec import (
+    SpecBuilder,
+)
 
 spec_builder = SpecBuilder()
 

@@ -2,13 +2,15 @@
 
 from pydantic import Field
 
-from massivesearch.spec.base_search_engine import (
+from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
     BaseSearchEngineConfig,
     BaseSearchResultIndex,
 )
-from massivesearch.spec.builder import SpecBuilder
+from massivesearch.spec import (
+    SpecBuilder,
+)
 
 spec_builder = SpecBuilder()
 

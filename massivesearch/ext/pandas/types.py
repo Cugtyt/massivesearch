@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 
-from massivesearch.spec.base_search_engine import (
+from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineConfig,
     BaseSearchResultIndex,

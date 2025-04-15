@@ -2,7 +2,9 @@
 
 from pydantic import BaseModel
 
-from massivesearch.index.base import BaseIndex
+from massivesearch.spec import BaseIndex, SpecBuilder
+
+spec_builder = SpecBuilder()
 
 
 class NumberRange(BaseModel):
@@ -12,7 +14,8 @@ class NumberRange(BaseModel):
     max: float
 
 
-class BasicNumberIndex(BaseIndex):
+@spec_builder.index("number_index")
+class NumberIndex(BaseIndex):
     """Schema for number index."""
 
     range: NumberRange

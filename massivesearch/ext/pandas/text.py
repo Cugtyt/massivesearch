@@ -9,7 +9,7 @@ from massivesearch.ext.pandas.types import (
     PandasBaseSearchEngineConfig,
     PandasSearchResultIndex,
 )
-from massivesearch.spec.base_search_engine import BaseSearchEngineArguments
+from massivesearch.search_engine.base import BaseSearchEngineArguments
 
 
 class PandasTextSearchEngineConfig(PandasBaseSearchEngineConfig):

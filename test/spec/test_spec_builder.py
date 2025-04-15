@@ -7,38 +7,40 @@ import pytest
 import yaml
 from pydantic import BaseModel
 
-from massivesearch.index import (
+from massivesearch.index.base import BaseIndex
+from massivesearch.search_engine.base import (
+    BaseSearchEngine,
+    BaseSearchEngineArguments,
+    BaseSearchEngineConfig,
+    BaseSearchResultIndex,
+)
+from massivesearch.spec import (
+    SpecBuilder,
+    SpecUnit,
+)
+from test.index import (
     bool_index_spec_builder,
     date_index_spec_builder,
     number_index_spec_builder,
     text_index_spec_builder,
     vector_index_spec_builder,
 )
-from massivesearch.index.number import NumberIndex
-from massivesearch.index.text import TextIndex
-from massivesearch.search_engine import (
+from test.index.number import NumberIndex
+from test.index.text import TextIndex
+from test.search_engine import (
     bool_search_engine_spec_builder,
     date_search_engine_spec_builder,
     number_search_engine_spec_builder,
     text_search_engine_spec_builder,
     vector_search_engine_spec_builder,
 )
-from massivesearch.search_engine.number_engine import (
+from test.search_engine.number_engine import (
     NumberSearchEngine,
     NumberSearchEngineConfig,
 )
-from massivesearch.search_engine.text_engine import (
+from test.search_engine.text_engine import (
     TextSearchEngine,
     TextSearchEngineConfig,
-)
-from massivesearch.spec import (
-    BaseIndex,
-    BaseSearchEngine,
-    BaseSearchEngineArguments,
-    BaseSearchEngineConfig,
-    BaseSearchResultIndex,
-    SpecBuilder,
-    SpecUnit,
 )
 
 

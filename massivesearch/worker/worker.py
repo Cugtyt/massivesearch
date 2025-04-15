@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from pydantic import ValidationError
 
 from massivesearch.model.base import BaseModelClient
+from massivesearch.search_engine.base import BaseSearchResultIndex
 from massivesearch.spec import Spec
-from massivesearch.spec.base_search_engine import BaseSearchResultIndex
 
 
 @dataclass

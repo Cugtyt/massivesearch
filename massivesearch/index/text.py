@@ -1,12 +1,9 @@
 """Text Index Schema."""
 
-from massivesearch.spec import BaseIndex, SpecBuilder
-
-spec_builder = SpecBuilder()
+from massivesearch.index.base import BaseIndex
 
 
-@spec_builder.index("text_index")
-class TextIndex(BaseIndex):
+class BasicTextIndex(BaseIndex):
     """Schema for text index."""
 
     examples: list[str]

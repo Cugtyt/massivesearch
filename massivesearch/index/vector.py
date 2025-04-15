@@ -1,10 +1,7 @@
 """Vector Index Schema."""
 
-from massivesearch.spec import BaseIndex, SpecBuilder
-
-spec_builder = SpecBuilder()
+from massivesearch.index.base import BaseIndex
 
 
-@spec_builder.index("vector_index")
-class VectorIndex(BaseIndex):
+class BasicVectorIndex(BaseIndex):
     """Schema for vector index."""

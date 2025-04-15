@@ -2,8 +2,8 @@
 
 from pydantic import BaseModel
 
-from massivesearch.spec.base_index import BaseIndex
-from massivesearch.spec.base_search_engine import (
+from massivesearch.index.base import BaseIndex
+from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
 )

@@ -5,25 +5,25 @@ from pathlib import Path
 import pytest
 import yaml
 
-from massivesearch.index import (
+from massivesearch.spec import (
+    SpecIndexTypeError,
+    SpecSearchEngineError,
+    SpecValidationError,
+    spec_validator,
+)
+from test.index import (
     bool_index_spec_builder,
     date_index_spec_builder,
     number_index_spec_builder,
     text_index_spec_builder,
     vector_index_spec_builder,
 )
-from massivesearch.search_engine import (
+from test.search_engine import (
     bool_search_engine_spec_builder,
     date_search_engine_spec_builder,
     number_search_engine_spec_builder,
     text_search_engine_spec_builder,
     vector_search_engine_spec_builder,
-)
-from massivesearch.spec import (
-    SpecIndexTypeError,
-    SpecSearchEngineError,
-    SpecValidationError,
-    spec_validator,
 )
 
 builder = (
