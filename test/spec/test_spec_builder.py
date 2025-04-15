@@ -17,6 +17,7 @@ from massivesearch.spec import (
     SpecBuilder,
     SpecIndexUnit,
 )
+from test.aggregator.test import TestAggregator
 from test.index import (
     bool_index_spec_builder,
     date_index_spec_builder,
@@ -126,6 +127,7 @@ def test_spec_builder_include() -> None:
         | text_search_engine_spec_builder
         | vector_search_engine_spec_builder
     )
+    builder.register_aggregator("test_aggregator", TestAggregator)
     builder.include(valid_spec)
 
     if len(builder.spec_units) != len(valid_spec["indexs"]):
@@ -181,6 +183,7 @@ def test_spec_builder_build_prompt() -> None:
         | text_search_engine_spec_builder
         | vector_search_engine_spec_builder
     )
+    builder.register_aggregator("test_aggregator", TestAggregator)
     builder.include(valid_spec)
     prompt = builder.build_prompt()
 
@@ -213,6 +216,7 @@ def test_spec_builder_build_format() -> None:
     with spec_file_path.open() as file:
         valid_spec = yaml.safe_load(file)
 
+    builder.register_aggregator("test_aggregator", TestAggregator)
     builder.include(valid_spec)
 
     format_model = builder.build_format()

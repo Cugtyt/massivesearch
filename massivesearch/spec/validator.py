@@ -47,7 +47,9 @@ def spec_validator(
 
     aggregator_spec = spec.get("aggregator")
     if aggregator_spec is None:
-        return
+        name = "aggregator"
+        msg = "Aggregator spec is missing."
+        raise SpecSchemaError(name, msg)
     aggregator_spec_validator(
         aggregator_spec,
         registered_aggregators,
@@ -127,6 +129,7 @@ def aggregator_spec_validator(
 
     aggregator_type = aggregator_spec.get("type")
     if aggregator_type not in registered_aggregators:
+        name = "aggregator"
         msg = f"Aggregator type '{aggregator_type}' is unknown."
         raise SpecSchemaError(name, msg)
 
@@ -142,11 +145,7 @@ def aggregator_spec_validator(
 
 
 def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
-    """Validate the search engine class."""
-    _validate_search_method(cls)
-
-
-def _validate_search_method(cls: type[BaseSearchEngine]) -> None:
+    """Validate the search engine."""
     if hasattr(cls, "search") and not callable(cls.search):
         msg = f"{cls.__name__} must have a callable search method."
         raise AttributeError(msg)

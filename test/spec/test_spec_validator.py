@@ -9,6 +9,7 @@ from massivesearch.spec import (
     SpecSchemaError,
     spec_validator,
 )
+from test.aggregator.test import TestAggregator
 from test.index import (
     bool_index_spec_builder,
     date_index_spec_builder,
@@ -36,6 +37,7 @@ builder = (
     | text_search_engine_spec_builder
     | vector_search_engine_spec_builder
 )
+builder.register_aggregator("test_aggregator", TestAggregator)
 
 
 def test_spec_validator_valid() -> None:

@@ -6,9 +6,9 @@ from unittest.mock import MagicMock
 
 import pytest
 import yaml
-from pydantic import ValidationError
 
 from massivesearch.model.azure_openai import AzureOpenAIClient
+from massivesearch.spec.validator import SpecSchemaError
 from massivesearch.worker import Worker
 from test.aggregator import TestAggregator
 from test.index import (
@@ -46,10 +46,11 @@ def test_worker_build_query() -> None:
         | text_search_engine_spec_builder
         | vector_search_engine_spec_builder
     )
-    builder.include(valid_spec)
+    with pytest.raises(SpecSchemaError):
+        builder.include(valid_spec)
 
-    with pytest.raises(ValidationError):
-        _ = builder.spec
+    builder.register_aggregator("test_aggregator", TestAggregator)
+    builder.include(valid_spec)
 
     builder.set_aggregator(TestAggregator())
 
@@ -88,6 +89,7 @@ def test_worker_build_complex_query() -> None:
         | text_search_engine_spec_builder
         | vector_search_engine_spec_builder
     )
+    builder.register_aggregator("test_aggregator", TestAggregator)
     builder.include(valid_spec)
 
     builder.set_aggregator(TestAggregator())
@@ -146,6 +148,7 @@ def test_worker_execute() -> None:
         | text_search_engine_spec_builder
         | vector_search_engine_spec_builder
     )
+    builder.register_aggregator("test_aggregator", TestAggregator)
     builder.include(valid_spec)
 
     builder.set_aggregator(TestAggregator())

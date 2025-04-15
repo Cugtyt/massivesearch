@@ -53,3 +53,5 @@ indexs:
       type: vector_search
       top_k: 5
       distance_metric: "cosine"
+aggregator:
+  type: "test_aggregator"
