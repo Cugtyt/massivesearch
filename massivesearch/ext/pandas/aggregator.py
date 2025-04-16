@@ -19,7 +19,7 @@ class PandasAggregator(BaseAggregator):
         worker_results: WorkerSearchResult,
     ) -> PandasAggregatorResult:
         """Aggregate the search results."""
-        all_common_indices = []
+        all_common_indices: list[pd.Index] = []
 
         for single_search_result in worker_results:
             partial_results = list(single_search_result.values())
@@ -32,11 +32,17 @@ class PandasAggregator(BaseAggregator):
                     all_common_indices.append(common_indices)
 
         book_df = pd.read_csv(self.file_path)
-        if all_common_indices:
-            combined_indices = pd.Index([]).union(*all_common_indices)
-            unique_indices = combined_indices[
-                ~combined_indices.duplicated(keep="first")
-            ]
-            return book_df.loc[unique_indices]
+        if not all_common_indices:
+            return pd.DataFrame()
 
+        # Start with an empty index or the first index
+        final_indices = pd.Index([])
+        if all_common_indices:
+            final_indices = all_common_indices[0]
+            # Compute the union with the rest of the indices
+            for idx in all_common_indices[1:]:
+                final_indices = final_indices.union(idx)
+
+        if not final_indices.empty:
+            return book_df.loc[final_indices]
         return pd.DataFrame()

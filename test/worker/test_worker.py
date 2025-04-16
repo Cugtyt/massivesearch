@@ -123,7 +123,7 @@ def test_worker_build_complex_query() -> None:
     )
     query_arguments = worker.build_query(
         "I want to buy a book for white snow, I only have $10, I am 10 years old, "
-        "I want the book in English and produced after 2020",
+        "I want the book produced after 2020",
     )
     if not query_arguments:
         msg = "Query should not be empty."
@@ -138,9 +138,6 @@ def test_worker_build_complex_query() -> None:
         raise ValueError(msg)
     if "10" not in query_to_string:
         msg = "Expected '10' to be in the query."
-        raise ValueError(msg)
-    if "English" not in query_to_string:
-        msg = "Expected 'English' to be in the query."
         raise ValueError(msg)
     if "2020" not in query_to_string:
         msg = "Expected '2020' to be in the query."

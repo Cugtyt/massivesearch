@@ -15,7 +15,9 @@ STSTEM_PROMPT_TEMPLATE = """Fill the search engine query arguments
 based on the user's intent and current index information.
 
 You will break down the user's intent into one or multiple queries,
-and each query will be passed to the search engine.
+each query has a sub_query and a structure of arguments for the search engine.
+The sub_query is a string that represents the user's intent,
+the arguments will be passed to the search engine.
 These queries will be executed in parallel and aggregated.
 Every query in the array represents an independent search path.
 
@@ -238,7 +240,7 @@ class SpecBuilder:
             msg = "No spec units or search engines available to build format."
             raise ValueError(msg)
 
-        fields = {}
+        fields = {"sub_query": str}
         for name, spec_unit in self.spec_units.items():
             arguments_type = self._get_arguments_type(spec_unit.search_engine)
 
