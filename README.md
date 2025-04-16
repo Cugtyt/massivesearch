@@ -69,7 +69,7 @@ with Path("./examples/book/book_spec.yaml").open() as file:
 book_builder.include(spec_file)
 worker = Worker(book_builder.spec)
 agg_result = worker.execute(
-    "I want to buy a book about prince or lord, and I only have 20 dollars.",
+    "I want to buy a story book about prince or lord, and I only have 20 dollars.",
 )
 ```
 
@@ -82,4 +82,46 @@ for result in worker.last_search_query:
 
 print("Books:")
 print(agg_result)
+```
+
+The queries is a list of dictionaries, each dictionary is a search query for each index.
+The relationship between the queries is OR, results from each query will be merged together.
+The relationship between the dictionary indexs is AND, all indexs must be satisfied.
+
+
+``` json
+[
+  {
+    "title": {
+      "keywords": ["prince", "lord"]
+    },
+    "description": {
+      "keywords": ["story"]
+    },
+    "price": {
+      "number_ranges": [
+        {
+          "start_number": null,
+          "end_number": 20.0
+        }
+      ]
+    }
+  },
+  {
+    "title": {
+      "keywords": ["story"]
+    },
+    "description": {
+      "keywords": ["prince", "lord"]
+    },
+    "price": {
+      "number_ranges": [
+        {
+          "start_number": null,
+          "end_number": 20.0
+        }
+      ]
+    }
+  }
+]
 ```
