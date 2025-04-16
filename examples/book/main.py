@@ -83,7 +83,7 @@ def main() -> None:
     book_builder.include(spec_file)
     worker = Worker(book_builder.spec)
     agg_result = worker.execute(
-        "I want to buy a story book about prince or lord, and I only have 20 dollars.",
+        "I want to buy a book about prince around 20 dollars",
     )
 
     logger.info("Search query:")

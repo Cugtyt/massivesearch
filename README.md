@@ -69,7 +69,7 @@ with Path("./examples/book/book_spec.yaml").open() as file:
 book_builder.include(spec_file)
 worker = Worker(book_builder.spec)
 agg_result = worker.execute(
-    "I want to buy a story book about prince or lord, and I only have 20 dollars.",
+    "I want to buy a book about prince around 20 dollars",
 )
 ```
 
@@ -93,32 +93,32 @@ The relationship between the dictionary indexs is AND, all indexs must be satisf
 [
   {
     "title": {
-      "keywords": ["prince", "lord"]
+      "keywords": ["prince"]
     },
     "description": {
-      "keywords": ["story"]
+      "keywords": []
     },
     "price": {
       "number_ranges": [
         {
-          "start_number": null,
-          "end_number": 20.0
+          "start_number": 15,
+          "end_number": 25
         }
       ]
     }
   },
   {
     "title": {
-      "keywords": ["story"]
+      "keywords": []
     },
     "description": {
-      "keywords": ["prince", "lord"]
+      "keywords": ["prince"]
     },
     "price": {
       "number_ranges": [
         {
-          "start_number": null,
-          "end_number": 20.0
+          "start_number": 15,
+          "end_number": 25
         }
       ]
     }

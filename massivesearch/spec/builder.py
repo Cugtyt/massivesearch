@@ -25,7 +25,20 @@ results matching ANY of the queries will be included in the final results.
 Within each individual query, parameters have an AND relationship -
 all conditions within a single query must be satisfied simultaneously.
 
-For example, with a query array of 5 elements, where each element contains
+IMPORTANT: If a user's intent involves a condition that could apply to multiple fields
+(e.g., a keyword appearing in 'title' OR 'description'),
+you MUST create separate queries for each field possibility,
+combined with other constraints.
+
+For example, for "find books about 'dogs' under $15",
+if 'dogs' can be in 'title' or 'description', generate:
+- Query 1: (title contains 'dogs' AND price <= 15)
+- Query 2: (description contains 'dogs' AND price <= 15)
+Do NOT generate a single query like
+(title contains 'dogs' AND description contains 'dogs' AND price <= 15)
+unless the user explicitly asks for the term in both fields.
+
+Another example, with a query array of 5 elements, where each element contains
 3 parameters:
 - Query 1: (param1 AND param2 AND param3)
 - Query 2: (param1 AND param2 AND param3)
