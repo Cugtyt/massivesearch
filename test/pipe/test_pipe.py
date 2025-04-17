@@ -298,7 +298,7 @@ def test_get_arguments_type_no_search_engine(pipe: MassiveSearchPipe) -> None:
 
 def test_get_arguments_type_no_arguments_param(pipe: MassiveSearchPipe) -> None:
     class NoArgsEngine(BaseSearchEngine):
-        def search(self, other_param: str) -> BaseSearchResultIndex:
+        async def search(self, other_param: str) -> BaseSearchResultIndex:
             pass
 
     with pytest.raises(
@@ -310,7 +310,7 @@ def test_get_arguments_type_no_arguments_param(pipe: MassiveSearchPipe) -> None:
 
 def test_get_arguments_type_no_annotation(pipe: MassiveSearchPipe) -> None:
     class NoAnnotationEngine(BaseSearchEngine):
-        def search(self, arguments) -> BaseSearchResultIndex:  # noqa: ANN001
+        async def search(self, arguments) -> BaseSearchResultIndex:  # noqa: ANN001
             pass  # No type hint
 
     with pytest.raises(
@@ -586,7 +586,7 @@ async def test_build_query_ai_client_exception(built_pipe: MassiveSearchPipe) ->
 async def test_search_success(built_pipe: MassiveSearchPipe) -> None:
     query = "search query"
     mock_search_queries = [{"sub_query": "sub1", "mock_index": {"param1": "val1"}}]
-    mock_search_result = MockSearchEngine().search(
+    mock_search_result = await MockSearchEngine().search(
         MockSearchEngineArgs(param1="val1"),
     )  # Simulate search result
 

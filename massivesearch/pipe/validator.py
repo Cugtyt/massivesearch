@@ -1,5 +1,7 @@
 """Spec file validator."""
 
+import inspect
+
 from pydantic import ValidationError
 
 from massivesearch.aggregator.base import BaseAggregator
@@ -203,6 +205,9 @@ def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
     if hasattr(cls, "search") and not callable(cls.search):
         msg = f"{cls.__name__} must have a callable search method."
         raise AttributeError(msg)
+    if not inspect.iscoroutinefunction(cls.search):
+        msg = f"{cls.__name__} search method must be async (use 'async def')."
+        raise TypeError(msg)
     if cls.search.__annotations__.get("arguments") is None:
         msg = f"{cls.__name__} search method must have an arguments attribute."
         raise AttributeError(msg)
@@ -244,6 +249,8 @@ def validate_aggregator(cls: type[BaseAggregator]) -> None:
     """Validate the aggregator."""
     if hasattr(cls, "aggregate") and not callable(cls.aggregate):
         msg = f"{cls.__name__} must have a callable aggregate method."
+    if not inspect.iscoroutinefunction(cls.aggregate):
+        msg = f"{cls.__name__} aggregate method must be async (use 'async def')."
         raise AttributeError(msg)
     if cls.aggregate.__annotations__.get("tasks") is None:
         msg = f"{cls.__name__} aggregate method must have an tasks attribute."
@@ -269,6 +276,9 @@ def validate_ai_client(cls: type[BaseAIClient]) -> None:
     if hasattr(cls, "response") and not callable(cls.response):
         msg = f"{cls.__name__} must have a callable response method."
         raise AttributeError(msg)
+    if not inspect.iscoroutinefunction(cls.response):
+        msg = f"{cls.__name__} response method must be async (use 'async def')."
+        raise TypeError(msg)
     if cls.response.__annotations__.get("messages") is None:
         msg = f"{cls.__name__} response method must have a messages attribute."
         raise AttributeError(msg)
