@@ -6,7 +6,7 @@ from massivesearch.aggregator import BaseAggregator
 from massivesearch.ext.pandas.types import (
     PandasAggregatorResult,
 )
-from massivesearch.worker import WorkerSearchResult
+from massivesearch.pipe import SearchResult
 
 
 class PandasAggregator(BaseAggregator):
@@ -16,7 +16,7 @@ class PandasAggregator(BaseAggregator):
 
     def aggregate(
         self,
-        worker_results: WorkerSearchResult,
+        worker_results: SearchResult,
     ) -> PandasAggregatorResult:
         """Aggregate the search results."""
         all_common_indices: list[pd.Index] = []
