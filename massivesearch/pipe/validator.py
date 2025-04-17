@@ -262,3 +262,27 @@ def validate_aggregator(cls: type[BaseAggregator]) -> None:
     if getattr(cls.aggregate, "__isabstractmethod__", False):
         msg = f"{cls.__name__} aggregate method must not be abstract."
         raise TypeError(msg)
+
+
+def validate_ai_client(cls: type[BaseAIClient]) -> None:
+    """Validate the AI client."""
+    if hasattr(cls, "response") and not callable(cls.response):
+        msg = f"{cls.__name__} must have a callable response method."
+        raise AttributeError(msg)
+    if cls.response.__annotations__.get("messages") is None:
+        msg = f"{cls.__name__} response method must have a messages attribute."
+        raise AttributeError(msg)
+
+    response_parameters = cls.response.__code__.co_varnames[
+        : cls.response.__code__.co_argcount
+    ]
+    if response_parameters != ("self", "messages", "format_model"):
+        msg = (
+            f"{cls.__name__} response method must only have 'self', "
+            f"'messages' and 'format_model' as parameters."
+        )
+        raise TypeError(msg)
+
+    if getattr(cls.response, "__isabstractmethod__", False):
+        msg = f"{cls.__name__} response method must not be abstract."
+        raise TypeError(msg)

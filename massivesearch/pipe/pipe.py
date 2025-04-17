@@ -20,6 +20,7 @@ from massivesearch.pipe.spec_index import SpecIndex
 from massivesearch.pipe.validator import (
     spec_validator,
     validate_aggregator,
+    validate_ai_client,
     validate_search_engine,
 )
 from massivesearch.search_engine.base import (
@@ -263,6 +264,7 @@ class MassiveSearchPipe:
         cls: type[BaseAIClient],
     ) -> type[BaseAIClient]:
         """Register an AI client type with a given key name."""
+        validate_ai_client(cls)
         self._register_types(
             "AI client",
             self.registered_ai_client_types,
