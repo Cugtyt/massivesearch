@@ -1,36 +1,56 @@
-from unittest.mock import MagicMock, patch
+# ruff: noqa: D100, D101, D102, ARG002, D103, S101, SLF001, D107, ANN204
+
+from unittest.mock import patch
 
 import pytest
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from massivesearch.aggregator.base import BaseAggregator, BaseAggregatorResult
 from massivesearch.index.base import BaseIndex
 from massivesearch.model.base import BaseAIClient
 from massivesearch.pipe.pipe import MassiveSearchPipe
 from massivesearch.pipe.spec_index import SpecIndex
-from massivesearch.search_engine.base import BaseSearchEngine, BaseSearchResultIndex
+from massivesearch.search_engine.base import (
+    BaseSearchEngine,
+    BaseSearchEngineArguments,
+    BaseSearchResultIndex,
+)
 
 
 class MockIndex(BaseIndex):
-    def prompt(self) -> str:  
+    def prompt(self, name: str) -> str:
         return "Mock Index Prompt"
 
 
-class MockSearchEngineArgs(BaseModel):
+class MockSearchEngineArgs(BaseSearchEngineArguments):
     param1: str
 
 
+class MockSearchResultIndex(BaseSearchResultIndex):
+    def __init__(self, results: list[dict[str, str]]):
+        self.results = results
+
+
 class MockSearchEngine(BaseSearchEngine):
-    def search(self, arguments: MockSearchEngineArgs) -> BaseSearchResultIndex:
-        return BaseSearchResultIndex(results=[{"id": "1", "score": 1.0}])
+    model_config = ConfigDict(extra="allow")
+
+    def search(self, arguments: MockSearchEngineArgs) -> MockSearchResultIndex:
+        return MockSearchResultIndex(results=[{"id": "1", "score": 1.0}])
+
+
+class MockAggregatorResult(BaseAggregatorResult):
+    def __init__(self, result: str):
+        self.result = result
 
 
 class MockAggregator(BaseAggregator):
+    model_config = ConfigDict(extra="allow")
+
     def aggregate(
         self,
         results: list[dict[str, BaseSearchResultIndex]],
-    ) -> BaseAggregatorResult:
+    ) -> MockAggregatorResult:
         return BaseAggregatorResult(result="Aggregated")
 
 
@@ -49,13 +69,13 @@ class MockAIClient(BaseAIClient):
 
 
 @pytest.fixture
-def pipe():
+def pipe() -> MassiveSearchPipe:
     """Fixture for MassiveSearchPipe instance."""
     return MassiveSearchPipe()
 
 
 @pytest.fixture
-def registered_pipe(pipe):
+def registered_pipe(pipe: MassiveSearchPipe) -> MassiveSearchPipe:
     """Fixture for MassiveSearchPipe instance with registered types."""
     pipe.register_index_type("mock_index", MockIndex)
     pipe.register_search_engine_type("mock_engine", MockSearchEngine)
@@ -65,7 +85,7 @@ def registered_pipe(pipe):
 
 
 @pytest.fixture
-def valid_spec():
+def valid_spec() -> dict:
     """Fixture for a valid spec dictionary."""
     return {
         "indexs": [
@@ -85,7 +105,10 @@ def valid_spec():
 
 
 @pytest.fixture
-def built_pipe(registered_pipe, valid_spec):
+def built_pipe(
+    registered_pipe: MassiveSearchPipe,
+    valid_spec: dict,
+) -> MassiveSearchPipe:
     """Fixture for a built MassiveSearchPipe instance."""
     with patch("massivesearch.pipe.pipe.spec_validator") as mock_validator:
         registered_pipe.build(valid_spec)
@@ -93,10 +116,7 @@ def built_pipe(registered_pipe, valid_spec):
     return registered_pipe
 
 
-# --- Test __init__ ---
-
-
-def test_pipe_init_default(pipe):
+def test_pipe_init_default(pipe: MassiveSearchPipe) -> None:
     assert pipe.indexs == []
     assert pipe.aggregator is None
     assert pipe.ai_client is None
@@ -110,13 +130,13 @@ def test_pipe_init_default(pipe):
     assert pipe.serach_query == []
 
 
-def test_pipe_init_custom_prompt():
+def test_pipe_init_custom_prompt() -> None:
     template = "Custom template with {context}"
     pipe = MassiveSearchPipe(prompt_template=template)
     assert pipe.prompt_template == template
 
 
-def test_pipe_init_invalid_prompt():
+def test_pipe_init_invalid_prompt() -> None:
     with pytest.raises(
         ValueError,
         match="Prompt template must contain '{context}' placeholder.",
@@ -124,12 +144,15 @@ def test_pipe_init_invalid_prompt():
         MassiveSearchPipe(prompt_template="Invalid template")
 
 
-# --- Test build_from_file ---
-
-
-def test_build_from_file_success(pipe, tmp_path, valid_spec):
+def test_build_from_file_success(
+    pipe: MassiveSearchPipe,
+    tmp_path: str,
+    valid_spec: dict,
+) -> None:
     filepath = tmp_path / "spec.yaml"
-    with open(filepath, "w") as f:
+    from pathlib import Path
+
+    with Path(filepath).open("w") as f:
         yaml.dump(valid_spec, f)
 
     with patch.object(pipe, "build") as mock_build:
@@ -137,7 +160,7 @@ def test_build_from_file_success(pipe, tmp_path, valid_spec):
         mock_build.assert_called_once_with(valid_spec)
 
 
-def test_build_from_file_not_found(pipe, tmp_path):
+def test_build_from_file_not_found(pipe: MassiveSearchPipe, tmp_path: str) -> None:
     filepath = tmp_path / "non_existent.yaml"
     with pytest.raises(
         FileNotFoundError,
@@ -146,14 +169,14 @@ def test_build_from_file_not_found(pipe, tmp_path):
         pipe.build_from_file(str(filepath))
 
 
-def test_build_from_file_is_dir(pipe, tmp_path):
+def test_build_from_file_is_dir(pipe: MassiveSearchPipe, tmp_path: str) -> None:
     dirpath = tmp_path / "spec_dir"
     dirpath.mkdir()
     with pytest.raises(ValueError, match=f"File path '{dirpath!s}' is not a file."):
         pipe.build_from_file(str(dirpath))
 
 
-def test_build_from_file_not_yaml(pipe, tmp_path):
+def test_build_from_file_not_yaml(pipe: MassiveSearchPipe, tmp_path: str) -> None:
     filepath = tmp_path / "spec.txt"
     filepath.touch()
     with pytest.raises(
@@ -163,15 +186,12 @@ def test_build_from_file_not_yaml(pipe, tmp_path):
         pipe.build_from_file(str(filepath))
 
 
-def test_build_from_file_empty_path(pipe):
+def test_build_from_file_empty_path(pipe: MassiveSearchPipe) -> None:
     with pytest.raises(ValueError, match="File path is required."):
         pipe.build_from_file("")
 
 
-# --- Test build ---
-
-
-def test_build_success(registered_pipe, valid_spec):
+def test_build_success(registered_pipe: MassiveSearchPipe, valid_spec: dict) -> None:
     with (
         patch("massivesearch.pipe.pipe.spec_validator") as mock_validator,
         patch.object(registered_pipe, "_build_prompt") as mock_build_prompt,
@@ -201,14 +221,17 @@ def test_build_success(registered_pipe, valid_spec):
         mock_build_format_model.assert_called_once()
 
 
-def test_build_no_spec(pipe):
+def test_build_no_spec(pipe: MassiveSearchPipe) -> None:
     with pytest.raises(ValueError, match="No schemas available to build."):
         pipe.build(None)
     with pytest.raises(ValueError, match="No schemas available to build."):
         pipe.build({})
 
 
-def test_build_validation_error(registered_pipe, valid_spec):
+def test_build_validation_error(
+    registered_pipe: MassiveSearchPipe,
+    valid_spec: dict,
+) -> None:
     with patch(
         "massivesearch.pipe.pipe.spec_validator",
         side_effect=ValueError("Validation failed"),
@@ -221,14 +244,14 @@ def test_build_validation_error(registered_pipe, valid_spec):
 # --- Test _build_prompt ---
 
 
-def test_build_prompt_success(built_pipe):
+def test_build_prompt_success(built_pipe: MassiveSearchPipe) -> None:
     # build() calls _build_prompt, so we check the result on a built pipe
     assert built_pipe.prompt != ""
     assert "{context}" not in built_pipe.prompt  # Placeholder should be replaced
     assert "Mock Index Prompt" in built_pipe.prompt  # Content from mock index
 
 
-def test_build_prompt_not_built(pipe):
+def test_build_prompt_not_built(pipe: MassiveSearchPipe) -> None:
     with pytest.raises(
         ValueError,
         match="Spec is not fully built. Cannot build prompt.",
@@ -236,10 +259,7 @@ def test_build_prompt_not_built(pipe):
         pipe._build_prompt()
 
 
-# --- Test _build_format_model ---
-
-
-def test_build_format_model_success(built_pipe):
+def test_build_format_model_success(built_pipe: MassiveSearchPipe) -> None:
     # build() calls _build_format_model, check result on built pipe
     assert built_pipe.format_model is not None
     assert issubclass(built_pipe.format_model, BaseModel)
@@ -251,7 +271,7 @@ def test_build_format_model_success(built_pipe):
     assert inner_model.model_fields["mock_index"].annotation == MockSearchEngineArgs
 
 
-def test_build_format_model_not_built(pipe):
+def test_build_format_model_not_built(pipe: MassiveSearchPipe) -> None:
     with pytest.raises(
         ValueError,
         match="Spec is not fully built. Cannot build format model.",
@@ -262,12 +282,12 @@ def test_build_format_model_not_built(pipe):
 # --- Test _get_arguments_type ---
 
 
-def test_get_arguments_type_success(pipe):
+def test_get_arguments_type_success(pipe: MassiveSearchPipe) -> None:
     args_type = pipe._get_arguments_type(MockSearchEngine())
     assert args_type == MockSearchEngineArgs
 
 
-def test_get_arguments_type_no_search_engine(pipe):
+def test_get_arguments_type_no_search_engine(pipe: MassiveSearchPipe) -> None:
     with pytest.raises(
         ValueError,
         match="No search engine available to get arguments type.",
@@ -275,7 +295,7 @@ def test_get_arguments_type_no_search_engine(pipe):
         pipe._get_arguments_type(None)
 
 
-def test_get_arguments_type_no_arguments_param(pipe):
+def test_get_arguments_type_no_arguments_param(pipe: MassiveSearchPipe) -> None:
     class NoArgsEngine(BaseSearchEngine):
         def search(self, other_param: str) -> BaseSearchResultIndex:
             pass
@@ -287,43 +307,43 @@ def test_get_arguments_type_no_arguments_param(pipe):
         pipe._get_arguments_type(NoArgsEngine())
 
 
-def test_get_arguments_type_no_annotation(pipe):
+def test_get_arguments_type_no_annotation(pipe: MassiveSearchPipe) -> None:
     class NoAnnotationEngine(BaseSearchEngine):
-        def search(self, arguments) -> BaseSearchResultIndex:
+        def search(self, arguments) -> BaseSearchResultIndex:  # noqa: ANN001
             pass  # No type hint
 
-    with pytest.raises(ValueError, match="'arguments' parameter has no annotation."):
+    with pytest.raises(
+        TypeError,
+        match="'arguments' parameter is not a subclass of BaseSearchEngineArguments",
+    ):
         pipe._get_arguments_type(NoAnnotationEngine())
 
 
-# --- Test Registration ---
-
-
-def test_register_index_type_success(pipe):
+def test_register_index_type_success(pipe: MassiveSearchPipe) -> None:
     pipe.register_index_type("test_index", MockIndex)
     assert "test_index" in pipe.registered_index_types
     assert pipe.registered_index_types["test_index"] == MockIndex
 
 
-def test_register_search_engine_type_success(pipe):
+def test_register_search_engine_type_success(pipe: MassiveSearchPipe) -> None:
     pipe.register_search_engine_type("test_engine", MockSearchEngine)
     assert "test_engine" in pipe.registered_search_engine_types
     assert pipe.registered_search_engine_types["test_engine"] == MockSearchEngine
 
 
-def test_register_aggregator_type_success(pipe):
+def test_register_aggregator_type_success(pipe: MassiveSearchPipe) -> None:
     pipe.register_aggregator_type("test_aggregator", MockAggregator)
     assert "test_aggregator" in pipe.registered_aggregator_types
     assert pipe.registered_aggregator_types["test_aggregator"] == MockAggregator
 
 
-def test_register_ai_client_type_success(pipe):
+def test_register_ai_client_type_success(pipe: MassiveSearchPipe) -> None:
     pipe.register_ai_client_type("test_ai", MockAIClient)
     assert "test_ai" in pipe.registered_ai_client_types
     assert pipe.registered_ai_client_types["test_ai"] == MockAIClient
 
 
-def test_register_type_decorator(pipe):
+def test_register_type_decorator(pipe: MassiveSearchPipe) -> None:
     @pipe.index_type("decorated_index")
     class DecoratedIndex(MockIndex):
         pass
@@ -352,12 +372,12 @@ def test_register_type_decorator(pipe):
     assert pipe.registered_ai_client_types["decorated_ai"] == DecoratedAI
 
 
-def test_register_type_no_name(pipe):
+def test_register_type_no_name(pipe: MassiveSearchPipe) -> None:
     with pytest.raises(ValueError, match="Name is required."):
         pipe.register_index_type("", MockIndex)
 
 
-def test_register_type_wrong_base_class(pipe):
+def test_register_type_wrong_base_class(pipe: MassiveSearchPipe) -> None:
     class WrongClass:
         pass
 
@@ -368,7 +388,7 @@ def test_register_type_wrong_base_class(pipe):
         pipe.register_index_type("wrong", WrongClass)
 
 
-def test_register_type_duplicate_name(pipe):
+def test_register_type_duplicate_name(pipe: MassiveSearchPipe) -> None:
     pipe.register_index_type("duplicate", MockIndex)
     with pytest.raises(
         ValueError,
@@ -377,10 +397,7 @@ def test_register_type_duplicate_name(pipe):
         pipe.register_index_type("duplicate", MockIndex)
 
 
-# --- Test __or__ ---
-
-
-def test_or_success():
+def test_or_success() -> None:
     pipe1 = MassiveSearchPipe()
     pipe2 = MassiveSearchPipe()
 
@@ -412,7 +429,7 @@ def test_or_success():
     assert combined.ai_client is None
 
 
-def test_or_type_error():
+def test_or_type_error() -> None:
     pipe1 = MassiveSearchPipe()
     with pytest.raises(
         TypeError,
@@ -421,7 +438,7 @@ def test_or_type_error():
         _ = pipe1 | "not a pipe"
 
 
-def test_or_aggregator_set():
+def test_or_aggregator_set() -> None:
     pipe1 = MassiveSearchPipe()
     pipe2 = MassiveSearchPipe()
     pipe1.aggregator = MockAggregator()  # Set aggregator on pipe1
@@ -434,7 +451,7 @@ def test_or_aggregator_set():
         _ = pipe1 | pipe2
 
 
-def test_or_ai_client_set():
+def test_or_ai_client_set() -> None:
     pipe1 = MassiveSearchPipe()
     pipe2 = MassiveSearchPipe()
     pipe1.ai_client = MockAIClient()  # Set AI client on pipe1
@@ -447,7 +464,7 @@ def test_or_ai_client_set():
         _ = pipe1 | pipe2
 
 
-def test_or_type_overlap():
+def test_or_type_overlap() -> None:
     pipe1 = MassiveSearchPipe()
     pipe2 = MassiveSearchPipe()
     pipe1.register_index_type("overlap_index", MockIndex)
@@ -456,10 +473,7 @@ def test_or_type_overlap():
         _ = pipe1 | pipe2
 
 
-# --- Test _build_messages ---
-
-
-def test_build_messages(built_pipe):
+def test_build_messages(built_pipe: MassiveSearchPipe) -> None:
     query = "test query"
     built_pipe.prompt = "System prompt"  # Set manually for simplicity
     messages = built_pipe._build_messages(query)
@@ -469,73 +483,104 @@ def test_build_messages(built_pipe):
     ]
 
 
-# --- Test build_query ---
-
-
-def test_build_query_success(built_pipe):
+def test_build_query_success(built_pipe: MassiveSearchPipe) -> None:
     query = "user query"
-    mock_response = {
+    mock_response_data = {
         "queries": [
             {"sub_query": "ai sub query", "mock_index": {"param1": "ai_value"}},
         ],
     }
 
-    # Mock the AI client's response
-    built_pipe.ai_client.response = MagicMock(return_value=mock_response)
-    # Mock _build_messages
-    with patch.object(
-        built_pipe,
-        "_build_messages",
-        return_value=[{"role": "user", "content": query}],
-    ) as mock_build_msg:
+    with (
+        patch.object(
+            built_pipe,
+            "_build_messages",
+            return_value=[{"role": "user", "content": query}],
+        ) as mock_build_msg,
+        patch(
+            "test.pipe.test_pipe.MockAIClient.response",
+            return_value=mock_response_data,
+        ) as mock_ai_response,
+    ):
         result = built_pipe.build_query(query)
 
+        # Assertions
         mock_build_msg.assert_called_once_with(query)
-        built_pipe.ai_client.response.assert_called_once_with(
+        mock_ai_response.assert_called_once_with(
             mock_build_msg.return_value,
             built_pipe.format_model,
         )
-        assert result == mock_response["queries"]
-        assert built_pipe.serach_query == mock_response["queries"]
+        assert result == mock_response_data["queries"]
+        assert built_pipe.serach_query == mock_response_data["queries"]
 
 
-def test_build_query_missing_key(built_pipe):
+def test_build_query_missing_key(built_pipe: MassiveSearchPipe) -> None:
     query = "user query"
     mock_response = {"wrong_key": []}  # Missing 'queries'
-    built_pipe.ai_client.response = MagicMock(return_value=mock_response)
 
-    with pytest.raises(
-        ValueError,
-        match="Failed to parse response: 'queries' key not found.",
+    with (
+        pytest.raises(
+            ValueError,
+            match="Model didn't respond with a valid query",
+        ),
+        patch.object(
+            built_pipe,
+            "_build_messages",
+            return_value=[{"role": "user", "content": query}],
+        ),
+        patch(
+            "test.pipe.test_pipe.MockAIClient.response",
+            return_value=mock_response,
+        ),
+    ):
+        # Call the method
+        built_pipe.build_query(query)
+
+
+def test_build_query_validation_error(built_pipe: MassiveSearchPipe) -> None:
+    query = "user query"
+    # Response structure doesn't match format_model (e.g., missing sub_query)
+    mock_response = {"queries": [{"mock_index": {"param1": "value"}}]}
+
+    with (
+        pytest.raises(ValueError, match="Model didn't respond with a valid query"),
+        patch.object(
+            built_pipe,
+            "_build_messages",
+            return_value=[{"role": "user", "content": query}],
+        ),
+        patch(
+            "test.pipe.test_pipe.MockAIClient.response",
+            return_value=mock_response,
+        ),
     ):
         built_pipe.build_query(query)
 
 
-def test_build_query_validation_error(built_pipe):
+def test_build_query_ai_client_exception(built_pipe: MassiveSearchPipe) -> None:
     query = "user query"
-    # Response structure doesn't match format_model (e.g., missing sub_query)
-    mock_response = {"queries": [{"mock_index": {"param1": "value"}}]}
-    built_pipe.ai_client.response = MagicMock(return_value=mock_response)
 
-    with pytest.raises(ValueError, match="Model didn't respond with a valid query"):
+    with (
+        pytest.raises(ValueError, match="Unexpected error: AI Error"),
+        patch.object(
+            built_pipe,
+            "_build_messages",
+            return_value=[{"role": "user", "content": query}],
+        ),
+        patch(
+            "test.pipe.test_pipe.MockAIClient.response",
+            side_effect=Exception("AI Error"),
+        ),
+    ):
         built_pipe.build_query(query)
 
 
-def test_build_query_ai_client_exception(built_pipe):
-    query = "user query"
-    built_pipe.ai_client.response = MagicMock(side_effect=Exception("AI Error"))
-
-    with pytest.raises(ValueError, match="Unexpected error: AI Error"):
-        built_pipe.build_query(query)
-
-
-# --- Test search ---
-
-
-def test_search_success(built_pipe):
+def test_search_success(built_pipe: MassiveSearchPipe) -> None:
     query = "search query"
     mock_search_queries = [{"sub_query": "sub1", "mock_index": {"param1": "val1"}}]
-    mock_search_result = BaseSearchResultIndex(results=[{"id": "res1", "score": 0.9}])
+    mock_search_result = MockSearchEngine().search(
+        MockSearchEngineArgs(param1="val1"),
+    )  # Simulate search result
 
     # Mock build_query
     with (
@@ -564,13 +609,10 @@ def test_search_success(built_pipe):
         assert results[0]["mock_index"] == mock_search_result
 
 
-# --- Test run ---
-
-
-def test_run_success(built_pipe):
+def test_run_success(built_pipe: MassiveSearchPipe) -> None:
     query = "run query"
-    mock_search_results = [{"mock_index": BaseSearchResultIndex(results=[])}]
-    mock_agg_result = BaseAggregatorResult(result="Final Answer")
+    mock_search_results = [{"mock_index": MockSearchResultIndex(results=[])}]
+    mock_agg_result = MockAggregatorResult(result="Final Answer")
 
     # Mock search method
     with (

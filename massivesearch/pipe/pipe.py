@@ -1,5 +1,6 @@
 """Pipe."""
 
+from collections.abc import Callable
 from inspect import signature
 from pathlib import Path
 
@@ -12,7 +13,11 @@ from massivesearch.model.base import BaseAIClient
 from massivesearch.pipe.prompt import PIPE_STSTEM_PROMPT_TEMPLATE
 from massivesearch.pipe.spec_index import SpecIndex
 from massivesearch.pipe.validator import spec_validator
-from massivesearch.search_engine.base import BaseSearchEngine, BaseSearchResultIndex
+from massivesearch.search_engine.base import (
+    BaseSearchEngine,
+    BaseSearchEngineArguments,
+    BaseSearchResultIndex,
+)
 
 SearchResult = list[dict[str, BaseSearchResultIndex]]
 
@@ -145,9 +150,14 @@ class MassiveSearchPipe:
         if "arguments" not in search_parameters:
             msg = "'arguments' parameter not found in search function."
             raise ValueError(msg)
-        if not search_parameters["arguments"].annotation:
-            msg = "'arguments' parameter has no annotation."
-            raise ValueError(msg)
+        if not issubclass(
+            search_parameters["arguments"].annotation,
+            BaseSearchEngineArguments,
+        ):
+            msg = (
+                "'arguments' parameter is not a subclass of BaseSearchEngineArguments."
+            )
+            raise TypeError(msg)
 
         return search_parameters["arguments"].annotation
 
@@ -173,11 +183,11 @@ class MassiveSearchPipe:
             raise ValueError(msg)
         registry[name] = cls
 
-    def index_type(self, name: str) -> type[BaseIndex]:
+    def index_type(self, name: str) -> Callable[[type[BaseIndex]], type[BaseIndex]]:
         """Return a decorator to register an index type with a given key name."""
         return lambda cls: self.register_index_type(name, cls)
 
-    def register_index_type(self, name: str, cls: type[BaseIndex]) -> None:
+    def register_index_type(self, name: str, cls: type[BaseIndex]) -> type[BaseIndex]:
         """Register an index type with a given key name."""
         self._register_types(
             "Index",
@@ -186,8 +196,12 @@ class MassiveSearchPipe:
             name,
             cls,
         )
+        return cls
 
-    def search_engine_type(self, name: str) -> type[BaseSearchEngine]:
+    def search_engine_type(
+        self,
+        name: str,
+    ) -> Callable[[type[BaseSearchEngine]], type[BaseSearchEngine]]:
         """Return a decorator to register a search engine type with a given key name."""
         return lambda cls: self.register_search_engine_type(name, cls)
 
@@ -195,7 +209,7 @@ class MassiveSearchPipe:
         self,
         name: str,
         cls: type[BaseSearchEngine],
-    ) -> None:
+    ) -> type[BaseSearchEngine]:
         """Register a search engine type with a given key name."""
         self._register_types(
             "Search engine",
@@ -204,12 +218,20 @@ class MassiveSearchPipe:
             name,
             cls,
         )
+        return cls
 
-    def aggregator_type(self, name: str) -> type[BaseAggregator]:
+    def aggregator_type(
+        self,
+        name: str,
+    ) -> Callable[[type[BaseAggregator]], type[BaseAggregator]]:
         """Return a decorator to register an aggregator type with a given key name."""
         return lambda cls: self.register_aggregator_type(name, cls)
 
-    def register_aggregator_type(self, name: str, cls: type[BaseAggregator]) -> None:
+    def register_aggregator_type(
+        self,
+        name: str,
+        cls: type[BaseAggregator],
+    ) -> type[BaseAggregator]:
         """Register an aggregator type with a given key name."""
         self._register_types(
             "Aggregator",
@@ -218,8 +240,12 @@ class MassiveSearchPipe:
             name,
             cls,
         )
+        return cls
 
-    def ai_client_type(self, name: str) -> type[BaseAIClient]:
+    def ai_client_type(
+        self,
+        name: str,
+    ) -> Callable[[type[BaseAIClient]], type[BaseAIClient]]:
         """Return a decorator to register an AI client type with a given key name."""
         return lambda cls: self.register_ai_client_type(name, cls)
 
@@ -227,7 +253,7 @@ class MassiveSearchPipe:
         self,
         name: str,
         cls: type[BaseAIClient],
-    ) -> None:
+    ) -> type[BaseAIClient]:
         """Register an AI client type with a given key name."""
         self._register_types(
             "AI client",
@@ -236,6 +262,7 @@ class MassiveSearchPipe:
             name,
             cls,
         )
+        return cls
 
     def __or__(self, other: "MassiveSearchPipe") -> "MassiveSearchPipe":
         """Combine two MassiveSearchPipe instances."""
@@ -313,12 +340,11 @@ class MassiveSearchPipe:
 
     def build_query(self, query: str) -> list[dict]:
         """Generate the query based on the spec."""
-        response = self.ai_client.response(
-            self._build_messages(query),
-            self.format_model,
-        )
-
         try:
+            response = self.ai_client.response(
+                self._build_messages(query),
+                self.format_model,
+            )
             self.format_model(**response)
             self.serach_query = response["queries"]
             return response["queries"]
