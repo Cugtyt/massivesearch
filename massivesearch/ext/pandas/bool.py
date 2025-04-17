@@ -8,7 +8,7 @@ from massivesearch.ext.pandas.types import (
     PandasBaseSearchEngine,
     PandasSearchResultIndex,
 )
-from massivesearch.spec import (
+from massivesearch.search_engine import (
     BaseSearchEngineArguments,
 )
 
@@ -41,7 +41,7 @@ class PandasBoolSearchEngineArguments(BaseSearchEngineArguments):
 class BoolSearchEngine(PandasBaseSearchEngine):
     """Boolean search engine."""
 
-    def search(
+    async def search(
         self,
         arguments: PandasBoolSearchEngineArguments,
     ) -> PandasSearchResultIndex:

@@ -24,7 +24,7 @@ class PandasTextSearchEngine(PandasBaseSearchEngine):
 
     matching_strategy: Literal["exact", "contains", "starts_with", "ends_with"]
 
-    def search(
+    async def search(
         self,
         arguments: PandasTextSearchEngineArguments,
     ) -> PandasSearchResultIndex:

@@ -51,7 +51,7 @@ class PandasNumberSearchEngineArguments(BaseSearchEngineArguments):
 class PandasNumberSearchEngine(PandasBaseSearchEngine):
     """Number search engine."""
 
-    def search(
+    async def search(
         self,
         arguments: PandasNumberSearchEngineArguments,
     ) -> PandasSearchResultIndex:

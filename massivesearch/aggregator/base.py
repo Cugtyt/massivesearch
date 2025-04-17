@@ -1,12 +1,13 @@
 """Aggregator."""
 
 from abc import abstractmethod
+from asyncio import Task
 
 from pydantic import BaseModel, ConfigDict
 
 from massivesearch.search_engine.base import BaseSearchResultIndex
 
-WorkerSearchResult = list[dict[str, BaseSearchResultIndex]]
+MassiveSearchTasks = list[dict[str, Task[BaseSearchResultIndex]]]
 
 
 class BaseAggregatorResult:
@@ -19,7 +20,8 @@ class BaseAggregator(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     @abstractmethod
-    def aggregate(self, worker_results: WorkerSearchResult) -> BaseAggregatorResult:
+    async def aggregate(
+        self,
+        tasks: MassiveSearchTasks,
+    ) -> BaseAggregatorResult:
         """Aggregate the search results."""
-        msg = "Subclasses must implement this method."
-        raise NotImplementedError(msg)

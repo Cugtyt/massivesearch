@@ -1,5 +1,6 @@
 """Pipe."""
 
+import asyncio
 from collections.abc import Callable
 from inspect import signature
 from pathlib import Path
@@ -7,19 +8,24 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, ValidationError, create_model
 
-from massivesearch.aggregator.base import BaseAggregator, BaseAggregatorResult
+from massivesearch.aggregator.base import (
+    BaseAggregator,
+    BaseAggregatorResult,
+    MassiveSearchTasks,
+)
 from massivesearch.index.base import BaseIndex
 from massivesearch.model.base import BaseAIClient
 from massivesearch.pipe.prompt import PIPE_STSTEM_PROMPT_TEMPLATE
 from massivesearch.pipe.spec_index import SpecIndex
-from massivesearch.pipe.validator import spec_validator
+from massivesearch.pipe.validator import (
+    spec_validator,
+    validate_aggregator,
+    validate_search_engine,
+)
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
-    BaseSearchResultIndex,
 )
-
-SearchResult = list[dict[str, BaseSearchResultIndex]]
 
 
 class MassiveSearchPipe:
@@ -211,6 +217,7 @@ class MassiveSearchPipe:
         cls: type[BaseSearchEngine],
     ) -> type[BaseSearchEngine]:
         """Register a search engine type with a given key name."""
+        validate_search_engine(cls)
         self._register_types(
             "Search engine",
             self.registered_search_engine_types,
@@ -233,6 +240,7 @@ class MassiveSearchPipe:
         cls: type[BaseAggregator],
     ) -> type[BaseAggregator]:
         """Register an aggregator type with a given key name."""
+        validate_aggregator(cls)
         self._register_types(
             "Aggregator",
             self.registered_aggregator_types,
@@ -338,10 +346,10 @@ class MassiveSearchPipe:
             },
         ]
 
-    def build_query(self, query: str) -> list[dict]:
+    async def build_query(self, query: str) -> list[dict]:
         """Generate the query based on the spec."""
         try:
-            response = self.ai_client.response(
+            response = await self.ai_client.response(
                 self._build_messages(query),
                 self.format_model,
             )
@@ -358,24 +366,26 @@ class MassiveSearchPipe:
             msg = f"Unexpected error: {e}"
             raise ValueError(msg) from e
 
-    def search(self, query: str) -> SearchResult:
+    async def search_task(self, query: str) -> MassiveSearchTasks:
         """Search for the query."""
-        search_queries = self.build_query(query)
-        search_results = []
+        search_queries = await self.build_query(query)
+        search_tasks: MassiveSearchTasks = []
         for search_query in search_queries:
             result = {}
             for index in self.indexs:
                 search_engine_arguments = index.search_engine_arguments_type(
                     **search_query[index.name],
                 )
-                search_result = index.search_engine.search(
-                    search_engine_arguments,
+                search_result = asyncio.create_task(
+                    index.search_engine.search(
+                        search_engine_arguments,
+                    ),
                 )
                 result[index.name] = search_result
-            search_results.append(result)
+            search_tasks.append(result)
 
-        return search_results
+        return search_tasks
 
-    def run(self, query: str) -> BaseAggregatorResult:
+    async def run(self, query: str) -> BaseAggregatorResult:
         """Execute the query and return the aggregated result."""
-        return self.aggregator.aggregate(self.search(query))
+        return await self.aggregator.aggregate(await self.search_task(query))

@@ -169,6 +169,35 @@ def aggregator_spec_validator(
         raise SpecSchemaError(name, msg) from e
 
 
+def ai_client_spec_validator(
+    ai_client_spec: dict,
+    registered_ai_clients: dict[str, BaseAIClient],
+) -> None:
+    """Validate the AI client."""
+    if not ai_client_spec or not isinstance(ai_client_spec, dict):
+        name = "ai_client"
+        msg = "AI client spec is missing or not a dictionary."
+        raise SpecSchemaError(name, msg)
+    if "type" not in ai_client_spec:
+        name = "ai_client"
+        msg = "AI client type is missing."
+        raise SpecSchemaError(name, msg)
+    ai_client_type = ai_client_spec.get("type")
+    if ai_client_type not in registered_ai_clients:
+        msg = f"AI client type '{ai_client_type}' is unknown."
+        raise SpecSchemaError(name, msg)
+
+    try:
+        ai_client_class = registered_ai_clients[ai_client_type]
+        ai_client_class(**ai_client_spec)
+    except ValidationError as e:
+        msg = f"AI client '{ai_client_type}' validation failed: {e}"
+        raise SpecSchemaError(name, msg) from e
+    except Exception as e:
+        msg = f"AI client '{ai_client_type}' initialization failed: {e}"
+        raise SpecSchemaError(name, msg) from e
+
+
 def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
     """Validate the search engine."""
     if hasattr(cls, "search") and not callable(cls.search):
@@ -211,30 +240,25 @@ def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
         raise TypeError(msg)
 
 
-def ai_client_spec_validator(
-    ai_client_spec: dict,
-    registered_ai_clients: dict[str, BaseAIClient],
-) -> None:
-    """Validate the AI client."""
-    if not ai_client_spec or not isinstance(ai_client_spec, dict):
-        name = "ai_client"
-        msg = "AI client spec is missing or not a dictionary."
-        raise SpecSchemaError(name, msg)
-    if "type" not in ai_client_spec:
-        name = "ai_client"
-        msg = "AI client type is missing."
-        raise SpecSchemaError(name, msg)
-    ai_client_type = ai_client_spec.get("type")
-    if ai_client_type not in registered_ai_clients:
-        msg = f"AI client type '{ai_client_type}' is unknown."
-        raise SpecSchemaError(name, msg)
+def validate_aggregator(cls: type[BaseAggregator]) -> None:
+    """Validate the aggregator."""
+    if hasattr(cls, "aggregate") and not callable(cls.aggregate):
+        msg = f"{cls.__name__} must have a callable aggregate method."
+        raise AttributeError(msg)
+    if cls.aggregate.__annotations__.get("tasks") is None:
+        msg = f"{cls.__name__} aggregate method must have an tasks attribute."
+        raise AttributeError(msg)
 
-    try:
-        ai_client_class = registered_ai_clients[ai_client_type]
-        ai_client_class(**ai_client_spec)
-    except ValidationError as e:
-        msg = f"AI client '{ai_client_type}' validation failed: {e}"
-        raise SpecSchemaError(name, msg) from e
-    except Exception as e:
-        msg = f"AI client '{ai_client_type}' initialization failed: {e}"
-        raise SpecSchemaError(name, msg) from e
+    aggregate_parameters = cls.aggregate.__code__.co_varnames[
+        : cls.aggregate.__code__.co_argcount
+    ]
+    if aggregate_parameters != ("self", "tasks"):
+        msg = (
+            f"{cls.__name__} aggregate method must only have 'self' and "
+            f"'tasks' as parameters."
+        )
+        raise TypeError(msg)
+
+    if getattr(cls.aggregate, "__isabstractmethod__", False):
+        msg = f"{cls.__name__} aggregate method must not be abstract."
+        raise TypeError(msg)

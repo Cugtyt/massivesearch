@@ -71,10 +71,10 @@ book_msp.register_ai_client_type(
 )
 
 
-def main() -> None:
+async def main() -> None:
     """Run the book search example."""
     book_msp.build_from_file("./examples/book/book_spec.yaml")
-    result = book_msp.run(
+    result = await book_msp.run(
         "I want to buy a book about prince or lord, I only have 30 dollars.",
     )
 
@@ -87,4 +87,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+
+    asyncio.run(main())

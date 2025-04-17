@@ -3,7 +3,7 @@
 import json
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
-from openai import AzureOpenAI
+from openai import AsyncAzureOpenAI
 
 from massivesearch.model.base import BaseAIClient
 
@@ -16,7 +16,7 @@ class AzureOpenAIClient(BaseAIClient):
     model: str = "gpt-4o"
     temperature: float
 
-    def response(
+    async def response(
         self,
         messages: list,
         output_format: type,
@@ -26,13 +26,13 @@ class AzureOpenAIClient(BaseAIClient):
             DefaultAzureCredential(),
             "https://cognitiveservices.azure.com/.default",
         )
-        client = AzureOpenAI(
+        client = AsyncAzureOpenAI(
             azure_deployment=self.model,
             azure_endpoint=self.endpoint,
             api_version=self.api_version,
             azure_ad_token_provider=token_provider,
         )
-        r = client.beta.chat.completions.parse(
+        r = await client.beta.chat.completions.parse(
             model=self.model,
             messages=messages,
             response_format=output_format,

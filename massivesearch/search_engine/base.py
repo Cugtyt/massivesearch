@@ -19,5 +19,8 @@ class BaseSearchEngine(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     @abstractmethod
-    def search(self, arguments: BaseSearchEngineArguments) -> BaseSearchResultIndex:
+    async def search(
+        self,
+        arguments: BaseSearchEngineArguments,
+    ) -> BaseSearchResultIndex:
         """Search for the given arguments."""

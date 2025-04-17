@@ -1,6 +1,7 @@
 # ruff: noqa: D100, D101, D102, ARG002, D103, S101, SLF001, D107, ANN204
 
-from unittest.mock import patch
+import asyncio
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import yaml
@@ -35,7 +36,7 @@ class MockSearchResultIndex(BaseSearchResultIndex):
 class MockSearchEngine(BaseSearchEngine):
     model_config = ConfigDict(extra="allow")
 
-    def search(self, arguments: MockSearchEngineArgs) -> MockSearchResultIndex:
+    async def search(self, arguments: MockSearchEngineArgs) -> MockSearchResultIndex:
         return MockSearchResultIndex(results=[{"id": "1", "score": 1.0}])
 
 
@@ -47,15 +48,15 @@ class MockAggregatorResult(BaseAggregatorResult):
 class MockAggregator(BaseAggregator):
     model_config = ConfigDict(extra="allow")
 
-    def aggregate(
+    async def aggregate(
         self,
-        results: list[dict[str, BaseSearchResultIndex]],
+        tasks: list[dict[str, asyncio.Task[BaseSearchResultIndex]]],
     ) -> MockAggregatorResult:
         return BaseAggregatorResult(result="Aggregated")
 
 
 class MockAIClient(BaseAIClient):
-    def response(
+    async def response(
         self,
         messages: list[dict[str, str]],
         format_model: type[BaseModel],
@@ -483,7 +484,8 @@ def test_build_messages(built_pipe: MassiveSearchPipe) -> None:
     ]
 
 
-def test_build_query_success(built_pipe: MassiveSearchPipe) -> None:
+@pytest.mark.asyncio
+async def test_build_query_success(built_pipe: MassiveSearchPipe) -> None:
     query = "user query"
     mock_response_data = {
         "queries": [
@@ -499,14 +501,14 @@ def test_build_query_success(built_pipe: MassiveSearchPipe) -> None:
         ) as mock_build_msg,
         patch(
             "test.pipe.test_pipe.MockAIClient.response",
+            new_callable=AsyncMock,
             return_value=mock_response_data,
         ) as mock_ai_response,
     ):
-        result = built_pipe.build_query(query)
+        result = await built_pipe.build_query(query)
 
-        # Assertions
         mock_build_msg.assert_called_once_with(query)
-        mock_ai_response.assert_called_once_with(
+        mock_ai_response.assert_awaited_once_with(
             mock_build_msg.return_value,
             built_pipe.format_model,
         )
@@ -514,7 +516,8 @@ def test_build_query_success(built_pipe: MassiveSearchPipe) -> None:
         assert built_pipe.serach_query == mock_response_data["queries"]
 
 
-def test_build_query_missing_key(built_pipe: MassiveSearchPipe) -> None:
+@pytest.mark.asyncio
+async def test_build_query_missing_key(built_pipe: MassiveSearchPipe) -> None:
     query = "user query"
     mock_response = {"wrong_key": []}  # Missing 'queries'
 
@@ -530,14 +533,15 @@ def test_build_query_missing_key(built_pipe: MassiveSearchPipe) -> None:
         ),
         patch(
             "test.pipe.test_pipe.MockAIClient.response",
+            new_callable=AsyncMock,
             return_value=mock_response,
         ),
     ):
-        # Call the method
-        built_pipe.build_query(query)
+        await built_pipe.build_query(query)
 
 
-def test_build_query_validation_error(built_pipe: MassiveSearchPipe) -> None:
+@pytest.mark.asyncio
+async def test_build_query_validation_error(built_pipe: MassiveSearchPipe) -> None:
     query = "user query"
     # Response structure doesn't match format_model (e.g., missing sub_query)
     mock_response = {"queries": [{"mock_index": {"param1": "value"}}]}
@@ -551,13 +555,15 @@ def test_build_query_validation_error(built_pipe: MassiveSearchPipe) -> None:
         ),
         patch(
             "test.pipe.test_pipe.MockAIClient.response",
+            new_callable=AsyncMock,
             return_value=mock_response,
         ),
     ):
-        built_pipe.build_query(query)
+        await built_pipe.build_query(query)
 
 
-def test_build_query_ai_client_exception(built_pipe: MassiveSearchPipe) -> None:
+@pytest.mark.asyncio
+async def test_build_query_ai_client_exception(built_pipe: MassiveSearchPipe) -> None:
     query = "user query"
 
     with (
@@ -569,13 +575,15 @@ def test_build_query_ai_client_exception(built_pipe: MassiveSearchPipe) -> None:
         ),
         patch(
             "test.pipe.test_pipe.MockAIClient.response",
+            new_callable=AsyncMock,
             side_effect=Exception("AI Error"),
         ),
     ):
-        built_pipe.build_query(query)
+        await built_pipe.build_query(query)
 
 
-def test_search_success(built_pipe: MassiveSearchPipe) -> None:
+@pytest.mark.asyncio
+async def test_search_success(built_pipe: MassiveSearchPipe) -> None:
     query = "search query"
     mock_search_queries = [{"sub_query": "sub1", "mock_index": {"param1": "val1"}}]
     mock_search_result = MockSearchEngine().search(
@@ -587,6 +595,7 @@ def test_search_success(built_pipe: MassiveSearchPipe) -> None:
         patch.object(
             built_pipe,
             "build_query",
+            new_callable=AsyncMock,
             return_value=mock_search_queries,
         ) as mock_build,
         patch.object(
@@ -595,9 +604,9 @@ def test_search_success(built_pipe: MassiveSearchPipe) -> None:
             return_value=mock_search_result,
         ) as mock_search,
     ):
-        results = built_pipe.search(query)
+        results = await built_pipe.search_task(query)
 
-        mock_build.assert_called_once_with(query)
+        mock_build.assert_awaited_once_with(query)
         # Assert search was called with correctly parsed arguments
         mock_search.assert_called_once()
         call_args = mock_search.call_args[0][0]
@@ -606,29 +615,32 @@ def test_search_success(built_pipe: MassiveSearchPipe) -> None:
 
         assert len(results) == 1
         assert "mock_index" in results[0]
-        assert results[0]["mock_index"] == mock_search_result
+        assert isinstance(results[0]["mock_index"], asyncio.Task)
 
 
-def test_run_success(built_pipe: MassiveSearchPipe) -> None:
+@pytest.mark.asyncio
+async def test_run_success(built_pipe: MassiveSearchPipe) -> None:
     query = "run query"
     mock_search_results = [{"mock_index": MockSearchResultIndex(results=[])}]
     mock_agg_result = MockAggregatorResult(result="Final Answer")
 
-    # Mock search method
+    # Mock search_task and aggregator.aggregate
     with (
         patch.object(
             built_pipe,
-            "search",
+            "search_task",
+            new_callable=AsyncMock,
             return_value=mock_search_results,
-        ) as mock_search,
+        ) as mock_search_task,
         patch.object(
             built_pipe.aggregator,
             "aggregate",
+            new_callable=AsyncMock,
             return_value=mock_agg_result,
         ) as mock_aggregate,
     ):
-        final_result = built_pipe.run(query)
+        final_result = await built_pipe.run(query)
 
-        mock_search.assert_called_once_with(query)
-        mock_aggregate.assert_called_once_with(mock_search_results)
+        mock_search_task.assert_awaited_once_with(query)
+        mock_aggregate.assert_awaited_once_with(mock_search_results)
         assert final_result == mock_agg_result
