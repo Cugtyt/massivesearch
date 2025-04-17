@@ -51,26 +51,22 @@ ai_client:
 3. Use SpecBuilder to register related index, search engine, and aggregator, example in [examples/book/main.py](examples/book/main.py):
 
 ``` python
-book_builder = SpecBuilder()
+book_msp = MassiveSearchPipe()
 
-book_builder.register_index("text_index", BasicTextIndex)
-book_builder.register_index("number_index", BasicNumberIndex)
-book_builder.register_search_engine("book_text_search", PandasTextSearchEngine)
-book_builder.register_search_engine("book_price_search", PandasNumberSearchEngine)
+book_msp.register_index_type("text_index", BasicTextIndex)
+book_msp.register_index_type("number_index", BasicNumberIndex)
+book_msp.register_search_engine_type("book_text_search", PandasTextSearchEngine)
+book_msp.register_search_engine_type("book_price_search", PandasNumberSearchEngine)
 
-book_builder.register_aggregator_type("book_aggregator", PandasAggregator)
-book_builder.register_ai_client_type("azure_openai", AzureOpenAIClient)
+book_msp.register_aggregator_type("book_aggregator", PandasAggregator)
+book_msp.register_ai_client_type("azure_openai", AzureOpenAIClient)
 ```
 
 4. Load data, ai model and use Worker to search, example in [examples/book/main.py](examples/book/main.py):
 
 ``` python
-with Path("./examples/book/book_spec.yaml").open() as file:
-    spec_file = yaml.safe_load(file)
-
-book_builder.include(spec_file)
-worker = Worker(book_builder.spec)
-agg_result = worker.execute(
+book_msp.build_from_file("./examples/book/book_spec.yaml")
+result = await book_msp.run(
     "I want to buy a book about prince or lord, I only have 30 dollars.",
 )
 ```
@@ -79,11 +75,11 @@ agg_result = worker.execute(
 
 ``` python
 print("Search query:")
-for result in worker.last_search_query:
-    print(result)
+for q in book_msp.serach_query:
+    print(q)
 
 print("Books:")
-print(agg_result)
+print(result)
 ```
 
 The queries is a list of dictionaries, each dictionary is a search query for each index.
