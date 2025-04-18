@@ -152,7 +152,7 @@ class MassiveSearchPipe:
 
         self.format_model = create_model(
             "MultiQueryFormat",
-            queries=(list[SingleQueryFormat], Field(...)), # type: ignore[valid-type]
+            queries=(list[SingleQueryFormat], Field(...)),  # type: ignore[valid-type]
             __base__=BaseModel,
         )
 

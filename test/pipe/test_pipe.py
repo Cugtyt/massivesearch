@@ -35,13 +35,14 @@ class MockSearchResultIndex(BaseSearchResultIndex):
         self.results = results
 
 
-class MockSearchEngine(BaseSearchEngine):
+class MockSearchEngine(
+    BaseSearchEngine[MockSearchEngineArgs, MockSearchResultIndex],
+):
     model_config = ConfigDict(extra="allow")
-    ArgsT = MockSearchEngineArgs
 
     async def search(
         self,
-        arguments: BaseSearchEngineArguments,
+        arguments: MockSearchEngineArgs,
     ) -> MockSearchResultIndex:
         return MockSearchResultIndex(results=[{"id": "1", "score": 1.0}])
 
@@ -332,7 +333,7 @@ def test_register_index_type_success(pipe: MassiveSearchPipe) -> None:
 def test_register_search_engine_type_success(pipe: MassiveSearchPipe) -> None:
     pipe.register_search_engine_type("test_engine", MockSearchEngine)
     assert "test_engine" in pipe.registered_search_engine_types
-    assert pipe.registered_search_engine_types["test_engine"] == MockSearchEngine
+    assert pipe.registered_search_engine_types["test_engine"] is MockSearchEngine
 
 
 def test_register_aggregator_type_success(pipe: MassiveSearchPipe) -> None:
@@ -367,7 +368,7 @@ def test_register_type_decorator(pipe: MassiveSearchPipe) -> None:
     assert "decorated_index" in pipe.registered_index_types
     assert pipe.registered_index_types["decorated_index"] == DecoratedIndex
     assert "decorated_engine" in pipe.registered_search_engine_types
-    assert pipe.registered_search_engine_types["decorated_engine"] == DecoratedEngine
+    assert pipe.registered_search_engine_types["decorated_engine"] is DecoratedEngine
     assert "decorated_aggregator" in pipe.registered_aggregator_types
     assert (
         pipe.registered_aggregator_types["decorated_aggregator"] == DecoratedAggregator
@@ -389,7 +390,7 @@ def test_register_type_wrong_base_class(pipe: MassiveSearchPipe) -> None:
         TypeError,
         match="Class 'WrongClass' is not a subclass of BaseIndex.",
     ):
-        pipe.register_index_type("wrong", WrongClass) # type: ignore  # noqa: PGH003
+        pipe.register_index_type("wrong", WrongClass)  # type: ignore  # noqa: PGH003
 
 
 def test_register_type_duplicate_name(pipe: MassiveSearchPipe) -> None:
@@ -439,7 +440,7 @@ def test_or_type_error() -> None:
         TypeError,
         match="Can only combine with another MassiveSearchPipe instance.",
     ):
-        _ = pipe1 | "not a pipe" # type: ignore  # noqa: PGH003
+        _ = pipe1 | "not a pipe"  # type: ignore  # noqa: PGH003
 
 
 def test_or_aggregator_set() -> None:

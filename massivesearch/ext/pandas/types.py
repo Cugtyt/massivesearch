@@ -11,7 +11,7 @@ from massivesearch.search_engine.base import (
 )
 
 
-class PandasSearchResultIndex(pd.Index[Any], BaseSearchResultIndex):
+class PandasSearchResultIndex(pd.Index, BaseSearchResultIndex):
     """Result of pandas search engine."""
 
 

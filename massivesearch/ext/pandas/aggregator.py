@@ -7,7 +7,6 @@ import pandas as pd
 from massivesearch.aggregator import BaseAggregator, MassiveSearchTasks
 from massivesearch.ext.pandas.types import (
     PandasAggregatorResult,
-    PandasSearchResultIndex,
 )
 
 
@@ -59,19 +58,11 @@ class PandasAggregator(BaseAggregator):
             return pd.Index([])
 
         common_indices = partial_results[0]
-        self._validate_result_type(common_indices)
 
         for partial_result in partial_results[1:]:
-            self._validate_result_type(partial_result)
             common_indices = common_indices.intersection(partial_result)
 
         return common_indices
-
-    def _validate_result_type(self, result: PandasSearchResultIndex) -> None:
-        """Validate that a result is of type PandasSearchResultIndex."""
-        if not isinstance(result, PandasSearchResultIndex):
-            msg = f"Expected PandasSearchResultIndex, got {type(result)}"
-            raise TypeError(msg)
 
     def _merge_indices(self, indices_list: list[pd.Index]) -> pd.Index:
         """Merge multiple indices using union operation."""
