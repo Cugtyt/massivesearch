@@ -19,7 +19,7 @@ class AzureOpenAIClient(BaseAIClient):
     async def response(
         self,
         messages: list,
-        output_format: type,
+        format_model: type,
     ) -> list[dict]:
         """Get a response from the Azure OpenAI service."""
         token_provider = get_bearer_token_provider(
@@ -35,7 +35,7 @@ class AzureOpenAIClient(BaseAIClient):
         r = await client.beta.chat.completions.parse(
             model=self.model,
             messages=messages,
-            response_format=output_format,
+            response_format=format_model,
             temperature=self.temperature,
         )
         content_str = r.choices[0].message.content

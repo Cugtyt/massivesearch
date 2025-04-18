@@ -9,5 +9,5 @@ class BaseAIClient(BaseModel, ABC):
     """Base class for all model clients."""
 
     @abstractmethod
-    async def response(self, messages: list, output_format: type[BaseModel]) -> dict:
+    async def response(self, messages: list, format_model: type[BaseModel]) -> dict:
         """Get a response from the model."""
