@@ -3,10 +3,17 @@ Massive Search: LLM Structured Outputs is All You Need
 
 ![](docs/overview.jpg)
 
-For complex search task like searching both images, text, boolean, and numbers,
-these is no simple query language that can express the search.
+Executing complex searches across entities with diverse attributes
+—such as text, numbers, booleans, and images—can be challenging.
+These searches often require intricate queries,
+potentially involving joins across multiple data sources.
+For example, searching for a book might involve filtering by its title,
+description, price, user comments, and cover image simultaneously.
 
-Massive Search is a way to search for complex data using LLM Structured Outputs.
+Massive Search provides a method for querying such complex
+but logically grouped data by leveraging LLM Structured Outputs.
+"Logically grouped" means all the data pertains to the same core entity,
+like a specific book product.
 Here is an example of book searching:
 
 1. Book data, full data in [examples/book/books.csv](examples/book/books.csv):
