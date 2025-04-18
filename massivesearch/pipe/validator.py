@@ -24,10 +24,10 @@ class SpecSchemaError(Exception):
 
 def spec_validator(
     spec: dict,
-    registered_indexs: dict[str, BaseIndex],
-    registered_search_engines: dict[str, BaseSearchEngine],
-    registered_aggregators: dict[str, BaseAggregator],
-    registered_ai_clients: dict[str, BaseAIClient],
+    registered_indexs: dict[str, type[BaseIndex]],
+    registered_search_engines: dict[str, type[BaseSearchEngine]],
+    registered_aggregators: dict[str, type[BaseAggregator]],
+    registered_ai_clients: dict[str, type[BaseAIClient]],
 ) -> None:
     """Validate the spec."""
     if not spec:
@@ -46,26 +46,26 @@ def spec_validator(
         raise SpecSchemaError(name, msg)
 
     index_spec_validator(
-        spec.get("indexs"),
+        spec["indexs"],
         registered_indexs,
     )
     search_engine_spec_validator(
-        spec.get("indexs"),
+        spec["indexs"],
         registered_search_engines,
     )
     aggregator_spec_validator(
-        spec.get("aggregator"),
+        spec["aggregator"],
         registered_aggregators,
     )
     ai_client_spec_validator(
-        spec.get("ai_client"),
+        spec["ai_client"],
         registered_ai_clients,
     )
 
 
 def index_spec_validator(
     index_spec: list[dict],
-    registered_indexs: dict[str, BaseIndex],
+    registered_indexs: dict[str, type[BaseIndex]],
 ) -> None:
     """Validate the index."""
     if not isinstance(index_spec, list):
@@ -75,12 +75,12 @@ def index_spec_validator(
     for index in index_spec:
         if "name" not in index:
             msg = "Index name is missing."
-            raise SpecSchemaError(index.get("name"), msg)
+            raise SpecSchemaError(index["name"], msg)
         if "type" not in index:
             msg = "Index type is missing."
-            raise SpecSchemaError(index.get("name"), msg)
-        index_name = index.get("name")
-        index_type = index.get("type")
+            raise SpecSchemaError(index["name"], msg)
+        index_name = index["name"]
+        index_type = index["type"]
         if index_type not in registered_indexs:
             msg = f"Index type '{index_type}' is unknown."
             raise SpecSchemaError(index_name, msg)
@@ -98,7 +98,7 @@ def index_spec_validator(
 
 def search_engine_spec_validator(
     index_spec: list[dict],
-    registered_search_engines: dict[str, BaseSearchEngine],
+    registered_search_engines: dict[str, type[BaseSearchEngine]],
 ) -> None:
     """Validate the search engine."""
     if not index_spec or not isinstance(index_spec, list):
@@ -113,33 +113,33 @@ def search_engine_spec_validator(
     for index in index_spec:
         if "name" not in index:
             msg = "Index name is missing."
-            raise SpecSchemaError(index.get("name"), msg)
+            raise SpecSchemaError(index["name"], msg)
         if "search_engine" not in index:
-            msg = f"Index '{index.get('name')}' search_engine is missing."
-            raise SpecSchemaError(index.get("name"), msg)
-        search_engine = index.get("search_engine")
+            msg = f"Index '{index['name']}' search_engine is missing."
+            raise SpecSchemaError(index["name"], msg)
+        search_engine = index["search_engine"]
         if "type" not in search_engine:
             msg = "Search engine type is missing."
-            raise SpecSchemaError(index.get("name"), msg)
-        search_engine_type = search_engine.get("type")
+            raise SpecSchemaError(index["name"], msg)
+        search_engine_type = search_engine["type"]
         if search_engine_type not in registered_search_engines:
             msg = f"Search engine type '{search_engine_type}' is unknown."
-            raise SpecSchemaError(index.get("name"), msg)
+            raise SpecSchemaError(index["name"], msg)
 
         try:
             search_engine_class = registered_search_engines[search_engine_type]
             search_engine_class(**search_engine)
         except ValidationError as e:
             msg = f"Search engine '{search_engine_type}' validation failed: {e}"
-            raise SpecSchemaError(index.get("name"), msg) from e
+            raise SpecSchemaError(index["name"], msg) from e
         except Exception as e:
             msg = f"Search engine '{search_engine_type}' initialization failed: {e}"
-            raise SpecSchemaError(index.get("name"), msg) from e
+            raise SpecSchemaError(index["name"], msg) from e
 
 
 def aggregator_spec_validator(
     aggregator_spec: dict,
-    registered_aggregators: dict[str, BaseAggregator],
+    registered_aggregators: dict[str, type[BaseAggregator]],
 ) -> None:
     """Validate the aggregator."""
     if aggregator_spec is None:
@@ -173,7 +173,7 @@ def aggregator_spec_validator(
 
 def ai_client_spec_validator(
     ai_client_spec: dict,
-    registered_ai_clients: dict[str, BaseAIClient],
+    registered_ai_clients: dict[str, type[BaseAIClient]],
 ) -> None:
     """Validate the AI client."""
     if not ai_client_spec or not isinstance(ai_client_spec, dict):
@@ -186,6 +186,7 @@ def ai_client_spec_validator(
         raise SpecSchemaError(name, msg)
     ai_client_type = ai_client_spec.get("type")
     if ai_client_type not in registered_ai_clients:
+        name = "ai_client"
         msg = f"AI client type '{ai_client_type}' is unknown."
         raise SpecSchemaError(name, msg)
 
@@ -193,9 +194,11 @@ def ai_client_spec_validator(
         ai_client_class = registered_ai_clients[ai_client_type]
         ai_client_class(**ai_client_spec)
     except ValidationError as e:
+        name = "ai_client"
         msg = f"AI client '{ai_client_type}' validation failed: {e}"
         raise SpecSchemaError(name, msg) from e
     except Exception as e:
+        name = "ai_client"
         msg = f"AI client '{ai_client_type}' initialization failed: {e}"
         raise SpecSchemaError(name, msg) from e
 
@@ -226,7 +229,7 @@ def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
         msg = f"{cls.__name__} search method must not be abstract."
         raise TypeError(msg)
 
-    arguments_annotation = cls.search.__annotations__.get("arguments")
+    arguments_annotation = cls.search.__annotations__["arguments"]
     if not issubclass(arguments_annotation, BaseSearchEngineArguments):
         msg = (
             f"{cls.__name__} search method arguments must be a "
@@ -236,7 +239,7 @@ def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
     if cls.search.__annotations__.get("return") is None:
         msg = f"{cls.__name__} search method must have a return type."
         raise AttributeError(msg)
-    return_annotation = cls.search.__annotations__.get("return")
+    return_annotation = cls.search.__annotations__["return"]
     if not issubclass(return_annotation, BaseSearchResultIndex):
         msg = (
             f"{cls.__name__} search method return type must be a "

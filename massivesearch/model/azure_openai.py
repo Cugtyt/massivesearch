@@ -20,7 +20,7 @@ class AzureOpenAIClient(BaseAIClient):
         self,
         messages: list,
         format_model: type,
-    ) -> list[dict]:
+    ) -> dict:
         """Get a response from the Azure OpenAI service."""
         token_provider = get_bearer_token_provider(
             DefaultAzureCredential(),
@@ -39,6 +39,9 @@ class AzureOpenAIClient(BaseAIClient):
             temperature=self.temperature,
         )
         content_str = r.choices[0].message.content
+        if not content_str or not isinstance(content_str, str):
+            msg = "Empty response from Azure OpenAI."
+            raise ValueError(msg)
         try:
             return json.loads(content_str)
         except json.JSONDecodeError as e:

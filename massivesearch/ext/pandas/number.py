@@ -1,17 +1,17 @@
 """Number search engine for Pandas."""
 
-from typing import Self
+from typing import Self, cast
 
-import pandas as pd
 from pydantic import BaseModel, Field, model_validator
 
 from massivesearch.ext.pandas.types import (
-    PandasBaseSearchEngine,
+    PandasBaseSearchEngineMixin,
     PandasSearchResultIndex,
 )
 from massivesearch.search_engine import (
     BaseSearchEngineArguments,
 )
+from massivesearch.search_engine.base import BaseSearchEngine
 
 
 class NumberRange(BaseModel):
@@ -25,9 +25,9 @@ class NumberRange(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate(self) -> Self:
-        """Validate the arguments."""
-        if not self.start_number and not self.end_number:
+    def check_range(self) -> Self:
+        """Validate the number range."""
+        if self.start_number is None and self.end_number is None:
             msg = "Both start_number and end_number cannot be None."
             raise ValueError(msg)
         if (
@@ -48,7 +48,10 @@ class PandasNumberSearchEngineArguments(BaseSearchEngineArguments):
     )
 
 
-class PandasNumberSearchEngine(PandasBaseSearchEngine):
+class PandasNumberSearchEngine(
+    PandasBaseSearchEngineMixin,
+    BaseSearchEngine[PandasNumberSearchEngineArguments, PandasSearchResultIndex],
+):
     """Number search engine."""
 
     async def search(
@@ -59,7 +62,7 @@ class PandasNumberSearchEngine(PandasBaseSearchEngine):
         data = self.load_df()
 
         if len(arguments.number_ranges) == 0:
-            return data.index
+            return cast("PandasSearchResultIndex", data.index)
 
         data_series = data[self.column_name]
         masks = []
@@ -80,8 +83,8 @@ class PandasNumberSearchEngine(PandasBaseSearchEngine):
             masks.append(current_mask)
 
         if not masks:
-            return pd.Index([])
+            return cast("PandasSearchResultIndex", data.index)
         combined_mask = masks[0]
         for mask in masks[1:]:
             combined_mask |= mask
-        return data.index[combined_mask]
+        return cast("PandasSearchResultIndex", data.index[combined_mask])

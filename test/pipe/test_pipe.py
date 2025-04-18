@@ -1,6 +1,8 @@
 # ruff: noqa: D100, D101, D102, ARG002, D103, S101, SLF001, D107, ANN204
 
 import asyncio
+from pathlib import Path
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -20,7 +22,7 @@ from massivesearch.search_engine.base import (
 
 
 class MockIndex(BaseIndex):
-    def prompt(self, name: str) -> str:
+    def prompt(self, index_name: str) -> str:
         return "Mock Index Prompt"
 
 
@@ -29,14 +31,18 @@ class MockSearchEngineArgs(BaseSearchEngineArguments):
 
 
 class MockSearchResultIndex(BaseSearchResultIndex):
-    def __init__(self, results: list[dict[str, str]]):
+    def __init__(self, results: list[dict[str, Any]]):
         self.results = results
 
 
 class MockSearchEngine(BaseSearchEngine):
     model_config = ConfigDict(extra="allow")
+    ArgsT = MockSearchEngineArgs
 
-    async def search(self, arguments: MockSearchEngineArgs) -> MockSearchResultIndex:
+    async def search(
+        self,
+        arguments: BaseSearchEngineArguments,
+    ) -> MockSearchResultIndex:
         return MockSearchResultIndex(results=[{"id": "1", "score": 1.0}])
 
 
@@ -52,7 +58,7 @@ class MockAggregator(BaseAggregator):
         self,
         tasks: list[dict[str, asyncio.Task[BaseSearchResultIndex]]],
     ) -> MockAggregatorResult:
-        return BaseAggregatorResult(result="Aggregated")
+        return MockAggregatorResult(result="Aggregated")
 
 
 class MockAIClient(BaseAIClient):
@@ -147,11 +153,10 @@ def test_pipe_init_invalid_prompt() -> None:
 
 def test_build_from_file_success(
     pipe: MassiveSearchPipe,
-    tmp_path: str,
+    tmp_path: Path,
     valid_spec: dict,
 ) -> None:
     filepath = tmp_path / "spec.yaml"
-    from pathlib import Path
 
     with Path(filepath).open("w") as f:
         yaml.dump(valid_spec, f)
@@ -161,7 +166,7 @@ def test_build_from_file_success(
         mock_build.assert_called_once_with(valid_spec)
 
 
-def test_build_from_file_not_found(pipe: MassiveSearchPipe, tmp_path: str) -> None:
+def test_build_from_file_not_found(pipe: MassiveSearchPipe, tmp_path: Path) -> None:
     filepath = tmp_path / "non_existent.yaml"
     with pytest.raises(
         FileNotFoundError,
@@ -170,14 +175,14 @@ def test_build_from_file_not_found(pipe: MassiveSearchPipe, tmp_path: str) -> No
         pipe.build_from_file(str(filepath))
 
 
-def test_build_from_file_is_dir(pipe: MassiveSearchPipe, tmp_path: str) -> None:
+def test_build_from_file_is_dir(pipe: MassiveSearchPipe, tmp_path: Path) -> None:
     dirpath = tmp_path / "spec_dir"
     dirpath.mkdir()
     with pytest.raises(ValueError, match=f"File path '{dirpath!s}' is not a file."):
         pipe.build_from_file(str(dirpath))
 
 
-def test_build_from_file_not_yaml(pipe: MassiveSearchPipe, tmp_path: str) -> None:
+def test_build_from_file_not_yaml(pipe: MassiveSearchPipe, tmp_path: Path) -> None:
     filepath = tmp_path / "spec.txt"
     filepath.touch()
     with pytest.raises(
@@ -224,7 +229,7 @@ def test_build_success(registered_pipe: MassiveSearchPipe, valid_spec: dict) -> 
 
 def test_build_no_spec(pipe: MassiveSearchPipe) -> None:
     with pytest.raises(ValueError, match="No schemas available to build."):
-        pipe.build(None)
+        pipe.build({})
     with pytest.raises(ValueError, match="No schemas available to build."):
         pipe.build({})
 
@@ -266,6 +271,7 @@ def test_build_format_model_success(built_pipe: MassiveSearchPipe) -> None:
     assert issubclass(built_pipe.format_model, BaseModel)
     assert "queries" in built_pipe.format_model.model_fields
     # Check the structure of the inner model
+    assert built_pipe.format_model.model_fields["queries"].annotation
     inner_model = built_pipe.format_model.model_fields["queries"].annotation.__args__[0]
     assert "sub_query" in inner_model.model_fields
     assert "mock_index" in inner_model.model_fields
@@ -280,9 +286,6 @@ def test_build_format_model_not_built(pipe: MassiveSearchPipe) -> None:
         pipe._build_format_model()
 
 
-# --- Test _get_arguments_type ---
-
-
 def test_get_arguments_type_success(pipe: MassiveSearchPipe) -> None:
     args_type = pipe._get_arguments_type(MockSearchEngine())
     assert args_type == MockSearchEngineArgs
@@ -293,12 +296,12 @@ def test_get_arguments_type_no_search_engine(pipe: MassiveSearchPipe) -> None:
         ValueError,
         match="No search engine available to get arguments type.",
     ):
-        pipe._get_arguments_type(None)
+        pipe._get_arguments_type(None)  # type: ignore  # noqa: PGH003
 
 
 def test_get_arguments_type_no_arguments_param(pipe: MassiveSearchPipe) -> None:
     class NoArgsEngine(BaseSearchEngine):
-        async def search(self, other_param: str) -> BaseSearchResultIndex:
+        async def search(self, other_param: str) -> BaseSearchResultIndex:  # type: ignore  # noqa: PGH003
             pass
 
     with pytest.raises(
@@ -310,7 +313,7 @@ def test_get_arguments_type_no_arguments_param(pipe: MassiveSearchPipe) -> None:
 
 def test_get_arguments_type_no_annotation(pipe: MassiveSearchPipe) -> None:
     class NoAnnotationEngine(BaseSearchEngine):
-        async def search(self, arguments) -> BaseSearchResultIndex:  # noqa: ANN001
+        async def search(self, arguments) -> BaseSearchResultIndex:  # type: ignore  # noqa: ANN001, PGH003
             pass  # No type hint
 
     with pytest.raises(
@@ -386,7 +389,7 @@ def test_register_type_wrong_base_class(pipe: MassiveSearchPipe) -> None:
         TypeError,
         match="Class 'WrongClass' is not a subclass of BaseIndex.",
     ):
-        pipe.register_index_type("wrong", WrongClass)
+        pipe.register_index_type("wrong", WrongClass) # type: ignore  # noqa: PGH003
 
 
 def test_register_type_duplicate_name(pipe: MassiveSearchPipe) -> None:
@@ -436,7 +439,7 @@ def test_or_type_error() -> None:
         TypeError,
         match="Can only combine with another MassiveSearchPipe instance.",
     ):
-        _ = pipe1 | "not a pipe"
+        _ = pipe1 | "not a pipe" # type: ignore  # noqa: PGH003
 
 
 def test_or_aggregator_set() -> None:
@@ -519,7 +522,7 @@ async def test_build_query_success(built_pipe: MassiveSearchPipe) -> None:
 @pytest.mark.asyncio
 async def test_build_query_missing_key(built_pipe: MassiveSearchPipe) -> None:
     query = "user query"
-    mock_response = {"wrong_key": []}  # Missing 'queries'
+    mock_response: dict = {"wrong_key": []}  # Missing 'queries'
 
     with (
         pytest.raises(

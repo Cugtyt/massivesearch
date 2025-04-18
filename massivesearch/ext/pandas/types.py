@@ -1,20 +1,21 @@
 """Types for pandas search engine."""
 
-from abc import ABC
+from typing import Any
 
 import pandas as pd
+from pydantic import BaseModel
 
+from massivesearch.aggregator.base import BaseAggregatorResult
 from massivesearch.search_engine.base import (
-    BaseSearchEngine,
     BaseSearchResultIndex,
 )
 
 
-class PandasSearchResultIndex(pd.Index, BaseSearchResultIndex):
+class PandasSearchResultIndex(pd.Index[Any], BaseSearchResultIndex):
     """Result of pandas search engine."""
 
 
-class PandasBaseSearchEngine(BaseSearchEngine, ABC):
+class PandasBaseSearchEngineMixin(BaseModel):
     """Pandas base search engine."""
 
     file_path: str
@@ -25,5 +26,5 @@ class PandasBaseSearchEngine(BaseSearchEngine, ABC):
         return pd.read_csv(self.file_path)
 
 
-class PandasAggregatorResult(pd.DataFrame):
+class PandasAggregatorResult(BaseAggregatorResult, pd.DataFrame):
     """Aggregator result for pandas DataFrames."""

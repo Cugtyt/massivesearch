@@ -1,16 +1,17 @@
 """Boolean search engine for Pandas."""
 
-from typing import Self
+from typing import Self, cast
 
 from pydantic import Field, model_validator
 
 from massivesearch.ext.pandas.types import (
-    PandasBaseSearchEngine,
+    PandasBaseSearchEngineMixin,
     PandasSearchResultIndex,
 )
 from massivesearch.search_engine import (
     BaseSearchEngineArguments,
 )
+from massivesearch.search_engine.base import BaseSearchEngine
 
 
 class PandasBoolSearchEngineArguments(BaseSearchEngineArguments):
@@ -30,7 +31,7 @@ class PandasBoolSearchEngineArguments(BaseSearchEngineArguments):
     )
 
     @model_validator(mode="after")
-    def validate(self) -> Self:
+    def bool_validate(self) -> Self:
         """Validate the arguments."""
         if not self.select_true and not self.select_false:
             msg = "Both select_true and select_false cannot be false."
@@ -38,7 +39,10 @@ class PandasBoolSearchEngineArguments(BaseSearchEngineArguments):
         return self
 
 
-class BoolSearchEngine(PandasBaseSearchEngine):
+class BoolSearchEngine(
+    PandasBaseSearchEngineMixin,
+    BaseSearchEngine[PandasBoolSearchEngineArguments, PandasSearchResultIndex],
+):
     """Boolean search engine."""
 
     async def search(
@@ -49,9 +53,9 @@ class BoolSearchEngine(PandasBaseSearchEngine):
         data = self.load_df()
         data_series = data[self.config.column_name]
         if arguments.select_true and arguments.select_false:
-            return data.index
+            return cast("PandasSearchResultIndex", data.index)
         if arguments.select_true:
-            return data.index[data_series]
+            return cast("PandasSearchResultIndex", data.index[data_series])
         if arguments.select_false:
-            return data.index[~data_series]
-        return data.index
+            return cast("PandasSearchResultIndex", data.index[~data_series])
+        return cast("PandasSearchResultIndex", data.index[False])

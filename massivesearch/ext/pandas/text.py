@@ -1,14 +1,15 @@
 """Text search engine for Pandas."""
 
-from typing import Literal
+from typing import Literal, cast
 
 from pydantic import Field
 
 from massivesearch.ext.pandas.types import (
-    PandasBaseSearchEngine,
+    PandasBaseSearchEngineMixin,
     PandasSearchResultIndex,
 )
 from massivesearch.search_engine import BaseSearchEngineArguments
+from massivesearch.search_engine.base import BaseSearchEngine
 
 
 class PandasTextSearchEngineArguments(BaseSearchEngineArguments):
@@ -19,7 +20,10 @@ class PandasTextSearchEngineArguments(BaseSearchEngineArguments):
     )
 
 
-class PandasTextSearchEngine(PandasBaseSearchEngine):
+class PandasTextSearchEngine(
+    PandasBaseSearchEngineMixin,
+    BaseSearchEngine[PandasTextSearchEngineArguments, PandasSearchResultIndex],
+):
     """Text search engine."""
 
     matching_strategy: Literal["exact", "contains", "starts_with", "ends_with"]
@@ -40,10 +44,14 @@ class PandasTextSearchEngine(PandasBaseSearchEngine):
                     data_series_lower.str.contains("|".join(keywords_lower))
                 ]
             case "starts_with":
-                indices = data.index[data_series_lower.str.startswith(keywords_lower)]
+                indices = data.index[
+                    data_series_lower.str.startswith(tuple(keywords_lower))
+                ]
             case "ends_with":
-                indices = data.index[data_series_lower.str.endswith(keywords_lower)]
+                indices = data.index[
+                    data_series_lower.str.endswith(tuple(keywords_lower))
+                ]
             case _:
                 msg = "Invalid matching strategy."
                 raise ValueError(msg)
-        return indices
+        return cast("PandasSearchResultIndex", indices)

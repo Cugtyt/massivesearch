@@ -4,9 +4,10 @@ import asyncio
 from collections.abc import Callable
 from inspect import signature
 from pathlib import Path
+from typing import Any
 
 import yaml
-from pydantic import BaseModel, ValidationError, create_model
+from pydantic import BaseModel, Field, ValidationError, create_model
 
 from massivesearch.aggregator.base import (
     BaseAggregator,
@@ -35,8 +36,8 @@ class MassiveSearchPipe:
     def __init__(self, *, prompt_template: str | None = None) -> None:
         """Initialize the Massive Search Pipe."""
         self.indexs: list[SpecIndex] = []
-        self.aggregator: BaseAggregator = None
-        self.ai_client: BaseAIClient = None
+        self.aggregator: BaseAggregator | None = None
+        self.ai_client: BaseAIClient | None = None
 
         self.registered_index_types: dict[str, type[BaseIndex]] = {}
         self.registered_search_engine_types: dict[str, type[BaseSearchEngine]] = {}
@@ -49,7 +50,7 @@ class MassiveSearchPipe:
         self.prompt_template = prompt_template or PIPE_STSTEM_PROMPT_TEMPLATE
 
         self.prompt: str = ""
-        self.format_model: type[BaseModel] = None
+        self.format_model: type[BaseModel] | None = None
         self.serach_query: list[dict] = []
 
     def build_from_file(self, file_path: str) -> None:
@@ -85,7 +86,7 @@ class MassiveSearchPipe:
             self.registered_ai_client_types,
         )
 
-        indexs_spec = spec.get("indexs")
+        indexs_spec = spec["indexs"]
         for index_spec in indexs_spec:
             name = index_spec.get("name")
             index_type = index_spec.get("type")
@@ -106,14 +107,14 @@ class MassiveSearchPipe:
                 ),
             )
 
-        aggregator_spec = spec.get("aggregator")
-        aggregator_type = aggregator_spec.get("type")
+        aggregator_spec = spec["aggregator"]
+        aggregator_type = aggregator_spec["type"]
         self.aggregator = self.registered_aggregator_types[aggregator_type](
             **aggregator_spec,
         )
 
-        ai_client_spec = spec.get("ai_client")
-        ai_client_type = ai_client_spec.get("type")
+        ai_client_spec = spec["ai_client"]
+        ai_client_type = ai_client_spec["type"]
         self.ai_client = self.registered_ai_client_types[ai_client_type](
             **ai_client_spec,
         )
@@ -136,17 +137,29 @@ class MassiveSearchPipe:
             msg = "Spec is not fully built. Cannot build format model."
             raise ValueError(msg)
 
-        fields = {"sub_query": str}
+        fields: dict[str, Any] = {"sub_query": (str, ...)}
         for index in self.indexs:
-            fields[index.name] = (index.search_engine_arguments_type, ...)
+            arg_type: type[BaseSearchEngineArguments] = (
+                index.search_engine_arguments_type
+            )
+            fields[index.name] = (arg_type, ...)
 
-        single_query_format = create_model("SingleQueryFormat", **fields)
-        self.format_model = create_model(
-            "MultiQueryFormat",
-            queries=list[single_query_format],
+        SingleQueryFormat: type[BaseModel] = create_model(  # noqa: N806
+            "SingleQueryFormat",
+            **fields,
+            __base__=BaseModel,
         )
 
-    def _get_arguments_type(self, search_engine: BaseSearchEngine) -> type[BaseModel]:
+        self.format_model = create_model(
+            "MultiQueryFormat",
+            queries=(list[SingleQueryFormat], Field(...)), # type: ignore[valid-type]
+            __base__=BaseModel,
+        )
+
+    def _get_arguments_type(
+        self,
+        search_engine: BaseSearchEngine,
+    ) -> type[BaseSearchEngineArguments]:
         """Get the arguments type for the search engine."""
         if not search_engine:
             msg = "No search engine available to get arguments type."
@@ -288,7 +301,7 @@ class MassiveSearchPipe:
             msg = "AI client already set in one or both pipes. Cannot combine."
             raise ValueError(msg)
 
-        type_registries_to_check = [
+        type_registries_to_check: list[tuple[dict[str, type], dict[str, type], str]] = [
             (self.registered_index_types, other.registered_index_types, "Index types"),
             (
                 self.registered_search_engine_types,
@@ -350,6 +363,12 @@ class MassiveSearchPipe:
 
     async def build_query(self, query: str) -> list[dict]:
         """Generate the query based on the spec."""
+        if not self.ai_client:
+            msg = "AI client is not set. Cannot build query."
+            raise ValueError(msg)
+        if not self.format_model:
+            msg = "Format model is not set. Cannot build query."
+            raise ValueError(msg)
         try:
             response = await self.ai_client.response(
                 self._build_messages(query),
@@ -390,4 +409,7 @@ class MassiveSearchPipe:
 
     async def run(self, query: str) -> BaseAggregatorResult:
         """Execute the query and return the aggregated result."""
+        if not self.aggregator:
+            msg = "Aggregator is not set. Cannot run query."
+            raise ValueError(msg)
         return await self.aggregator.aggregate(await self.search_task(query))
