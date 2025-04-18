@@ -6,8 +6,8 @@ from massivesearch.index.base import BaseIndex
 from massivesearch.search_engine.base import BaseSearchEngine, BaseSearchEngineArguments
 
 
-class SpecIndex(BaseModel):
-    """Spec unit class."""
+class MassiveSearchIndex(BaseModel):
+    """MassiveSearch index unit."""
 
     name: str
     index: BaseIndex

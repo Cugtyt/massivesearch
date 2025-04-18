@@ -48,10 +48,7 @@ class PandasNumberSearchEngineArguments(BaseSearchEngineArguments):
     )
 
 
-class PandasNumberSearchEngine(
-    PandasBaseSearchEngineMixin,
-    BaseSearchEngine[PandasNumberSearchEngineArguments, PandasSearchResultIndex],
-):
+class PandasNumberSearchEngine(PandasBaseSearchEngineMixin, BaseSearchEngine):
     """Number search engine."""
 
     async def search(

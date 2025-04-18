@@ -17,12 +17,13 @@ from massivesearch.aggregator.base import (
 from massivesearch.index.base import BaseIndex
 from massivesearch.model.base import BaseAIClient
 from massivesearch.pipe.prompt import PIPE_STSTEM_PROMPT_TEMPLATE
-from massivesearch.pipe.spec_index import SpecIndex
+from massivesearch.pipe.spec_index import MassiveSearchIndex
 from massivesearch.pipe.validator import (
-    spec_validator,
     validate_aggregator,
     validate_ai_client,
+    validate_pipe_search_result_index,
     validate_search_engine,
+    validate_spec,
 )
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
@@ -35,7 +36,7 @@ class MassiveSearchPipe:
 
     def __init__(self, *, prompt_template: str | None = None) -> None:
         """Initialize the Massive Search Pipe."""
-        self.indexs: list[SpecIndex] = []
+        self.indexs: list[MassiveSearchIndex] = []
         self.aggregator: BaseAggregator | None = None
         self.ai_client: BaseAIClient | None = None
 
@@ -78,7 +79,7 @@ class MassiveSearchPipe:
             msg = "No schemas available to build."
             raise ValueError(msg)
 
-        spec_validator(
+        validate_spec(
             spec,
             self.registered_index_types,
             self.registered_search_engine_types,
@@ -97,7 +98,7 @@ class MassiveSearchPipe:
                 **search_engine_spec,
             )
             self.indexs.append(
-                SpecIndex(
+                MassiveSearchIndex(
                     name=name,
                     index=index,
                     search_engine=search_engine,
@@ -118,6 +119,8 @@ class MassiveSearchPipe:
         self.ai_client = self.registered_ai_client_types[ai_client_type](
             **ai_client_spec,
         )
+
+        validate_pipe_search_result_index(self.indexs, self.aggregator)
 
         self._build_prompt()
         self._build_format_model()

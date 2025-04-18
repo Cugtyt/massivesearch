@@ -11,7 +11,7 @@ class BaseIndex(BaseModel, ABC):
     model_config = ConfigDict(extra="ignore")
 
     description: str
-    examples: list | None = None
+    examples: list
 
     def prompt(self, index_name: str) -> str:
         """Return the prompt for the index schema."""

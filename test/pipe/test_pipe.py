@@ -9,11 +9,15 @@ import pytest
 import yaml
 from pydantic import BaseModel, ConfigDict
 
-from massivesearch.aggregator.base import BaseAggregator, BaseAggregatorResult
+from massivesearch.aggregator.base import (
+    BaseAggregator,
+    BaseAggregatorResult,
+    MassiveSearchTasks,
+)
 from massivesearch.index.base import BaseIndex
 from massivesearch.model.base import BaseAIClient
 from massivesearch.pipe.pipe import MassiveSearchPipe
-from massivesearch.pipe.spec_index import SpecIndex
+from massivesearch.pipe.spec_index import MassiveSearchIndex
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
@@ -57,7 +61,7 @@ class MockAggregator(BaseAggregator):
 
     async def aggregate(
         self,
-        tasks: list[dict[str, asyncio.Task[BaseSearchResultIndex]]],
+        tasks: MassiveSearchTasks[MockSearchResultIndex],
     ) -> MockAggregatorResult:
         return MockAggregatorResult(result="Aggregated")
 
@@ -101,6 +105,7 @@ def valid_spec() -> dict:
                 "name": "mock_index",
                 "type": "mock_index",
                 "description": "Test index",
+                "examples": ["example1", "example2"],
                 "search_engine": {
                     "type": "mock_engine",
                     "description": "Test engine",
@@ -118,7 +123,7 @@ def built_pipe(
     valid_spec: dict,
 ) -> MassiveSearchPipe:
     """Fixture for a built MassiveSearchPipe instance."""
-    with patch("massivesearch.pipe.pipe.spec_validator") as mock_validator:
+    with patch("massivesearch.pipe.pipe.validate_spec") as mock_validator:
         registered_pipe.build(valid_spec)
         mock_validator.assert_called_once()
     return registered_pipe
@@ -200,7 +205,7 @@ def test_build_from_file_empty_path(pipe: MassiveSearchPipe) -> None:
 
 def test_build_success(registered_pipe: MassiveSearchPipe, valid_spec: dict) -> None:
     with (
-        patch("massivesearch.pipe.pipe.spec_validator") as mock_validator,
+        patch("massivesearch.pipe.pipe.validate_spec") as mock_validator,
         patch.object(registered_pipe, "_build_prompt") as mock_build_prompt,
         patch.object(registered_pipe, "_build_format_model") as mock_build_format_model,
         patch.object(
@@ -213,7 +218,7 @@ def test_build_success(registered_pipe: MassiveSearchPipe, valid_spec: dict) -> 
 
         mock_validator.assert_called_once()
         assert len(registered_pipe.indexs) == 1
-        assert isinstance(registered_pipe.indexs[0], SpecIndex)
+        assert isinstance(registered_pipe.indexs[0], MassiveSearchIndex)
         assert registered_pipe.indexs[0].name == "mock_index"
         assert isinstance(registered_pipe.indexs[0].index, MockIndex)
         assert isinstance(registered_pipe.indexs[0].search_engine, MockSearchEngine)
@@ -240,7 +245,7 @@ def test_build_validation_error(
     valid_spec: dict,
 ) -> None:
     with patch(
-        "massivesearch.pipe.pipe.spec_validator",
+        "massivesearch.pipe.pipe.validate_spec",
         side_effect=ValueError("Validation failed"),
     ) as mock_validator:
         with pytest.raises(ValueError, match="Validation failed"):
@@ -339,13 +344,13 @@ def test_register_search_engine_type_success(pipe: MassiveSearchPipe) -> None:
 def test_register_aggregator_type_success(pipe: MassiveSearchPipe) -> None:
     pipe.register_aggregator_type("test_aggregator", MockAggregator)
     assert "test_aggregator" in pipe.registered_aggregator_types
-    assert pipe.registered_aggregator_types["test_aggregator"] == MockAggregator
+    assert pipe.registered_aggregator_types["test_aggregator"] is MockAggregator
 
 
 def test_register_ai_client_type_success(pipe: MassiveSearchPipe) -> None:
     pipe.register_ai_client_type("test_ai", MockAIClient)
     assert "test_ai" in pipe.registered_ai_client_types
-    assert pipe.registered_ai_client_types["test_ai"] == MockAIClient
+    assert pipe.registered_ai_client_types["test_ai"] is MockAIClient
 
 
 def test_register_type_decorator(pipe: MassiveSearchPipe) -> None:
@@ -371,7 +376,7 @@ def test_register_type_decorator(pipe: MassiveSearchPipe) -> None:
     assert pipe.registered_search_engine_types["decorated_engine"] is DecoratedEngine
     assert "decorated_aggregator" in pipe.registered_aggregator_types
     assert (
-        pipe.registered_aggregator_types["decorated_aggregator"] == DecoratedAggregator
+        pipe.registered_aggregator_types["decorated_aggregator"] is DecoratedAggregator
     )
     assert "decorated_ai" in pipe.registered_ai_client_types
     assert pipe.registered_ai_client_types["decorated_ai"] == DecoratedAI

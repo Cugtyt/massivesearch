@@ -39,10 +39,7 @@ class PandasBoolSearchEngineArguments(BaseSearchEngineArguments):
         return self
 
 
-class BoolSearchEngine(
-    PandasBaseSearchEngineMixin,
-    BaseSearchEngine[PandasBoolSearchEngineArguments, PandasSearchResultIndex],
-):
+class BoolSearchEngine(PandasBaseSearchEngineMixin, BaseSearchEngine):
     """Boolean search engine."""
 
     async def search(

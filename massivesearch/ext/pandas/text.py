@@ -20,10 +20,7 @@ class PandasTextSearchEngineArguments(BaseSearchEngineArguments):
     )
 
 
-class PandasTextSearchEngine(
-    PandasBaseSearchEngineMixin,
-    BaseSearchEngine[PandasTextSearchEngineArguments, PandasSearchResultIndex],
-):
+class PandasTextSearchEngine(PandasBaseSearchEngineMixin, BaseSearchEngine):
     """Text search engine."""
 
     matching_strategy: Literal["exact", "contains", "starts_with", "ends_with"]

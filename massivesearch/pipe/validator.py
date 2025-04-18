@@ -1,12 +1,14 @@
 """Spec file validator."""
 
 import inspect
+import typing
 
 from pydantic import ValidationError
 
-from massivesearch.aggregator.base import BaseAggregator
+from massivesearch.aggregator.base import BaseAggregator, MassiveSearchTasks
 from massivesearch.index.base import BaseIndex
 from massivesearch.model.base import BaseAIClient
+from massivesearch.pipe.spec_index import MassiveSearchIndex
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
@@ -22,7 +24,7 @@ class SpecSchemaError(Exception):
         super().__init__(f"Spec '{name}': {message}")
 
 
-def spec_validator(
+def validate_spec(
     spec: dict,
     registered_indexs: dict[str, type[BaseIndex]],
     registered_search_engines: dict[str, type[BaseSearchEngine]],
@@ -45,25 +47,25 @@ def spec_validator(
         msg = f"Spec keys must be exactly {spec_keys}, but got {set(spec.keys())}"
         raise SpecSchemaError(name, msg)
 
-    index_spec_validator(
+    validate_index_spec(
         spec["indexs"],
         registered_indexs,
     )
-    search_engine_spec_validator(
+    validate_search_engine_spec(
         spec["indexs"],
         registered_search_engines,
     )
-    aggregator_spec_validator(
+    validate_aggregator_spec(
         spec["aggregator"],
         registered_aggregators,
     )
-    ai_client_spec_validator(
+    validate_ai_client_spec(
         spec["ai_client"],
         registered_ai_clients,
     )
 
 
-def index_spec_validator(
+def validate_index_spec(
     index_spec: list[dict],
     registered_indexs: dict[str, type[BaseIndex]],
 ) -> None:
@@ -96,7 +98,7 @@ def index_spec_validator(
             raise SpecSchemaError(index_name, msg) from e
 
 
-def search_engine_spec_validator(
+def validate_search_engine_spec(
     index_spec: list[dict],
     registered_search_engines: dict[str, type[BaseSearchEngine]],
 ) -> None:
@@ -137,7 +139,7 @@ def search_engine_spec_validator(
             raise SpecSchemaError(index["name"], msg) from e
 
 
-def aggregator_spec_validator(
+def validate_aggregator_spec(
     aggregator_spec: dict,
     registered_aggregators: dict[str, type[BaseAggregator]],
 ) -> None:
@@ -171,7 +173,7 @@ def aggregator_spec_validator(
         raise SpecSchemaError(name, msg) from e
 
 
-def ai_client_spec_validator(
+def validate_ai_client_spec(
     ai_client_spec: dict,
     registered_ai_clients: dict[str, type[BaseAIClient]],
 ) -> None:
@@ -259,6 +261,30 @@ def validate_aggregator(cls: type[BaseAggregator]) -> None:
         msg = f"{cls.__name__} aggregate method must have an tasks attribute."
         raise AttributeError(msg)
 
+    tasks_annotation = cls.aggregate.__annotations__["tasks"]
+    origin = typing.get_origin(tasks_annotation)
+    args = typing.get_args(tasks_annotation)
+
+    if origin is not MassiveSearchTasks:
+        msg = (
+            f"{cls.__name__} aggregate 'tasks' annotation must be "
+            f"MassiveSearchTasks[BaseSearchResultIndex]."
+        )
+        raise TypeError(msg)
+
+    if args is None or len(args) != 1:
+        msg = (
+            f"{cls.__name__} aggregate 'tasks' annotation must be "
+            f"MassiveSearchTasks[BaseSearchResultIndex]."
+        )
+        raise TypeError(msg)
+    if not issubclass(args[0], BaseSearchResultIndex):
+        msg = (
+            f"{cls.__name__} aggregate 'tasks' annotation must be "
+            f"MassiveSearchTasks[BaseSearchResultIndex]."
+        )
+        raise TypeError(msg)
+
     aggregate_parameters = cls.aggregate.__code__.co_varnames[
         : cls.aggregate.__code__.co_argcount
     ]
@@ -298,4 +324,46 @@ def validate_ai_client(cls: type[BaseAIClient]) -> None:
 
     if getattr(cls.response, "__isabstractmethod__", False):
         msg = f"{cls.__name__} response method must not be abstract."
+        raise TypeError(msg)
+
+
+def validate_pipe_search_result_index(
+    indexs: list[MassiveSearchIndex],
+    aggregator: BaseAggregator,
+) -> None:
+    """Validate the search result index."""
+    if not isinstance(indexs, list):
+        msg = "Indexs must be a list."
+        raise TypeError(msg)
+    if not isinstance(aggregator, BaseAggregator):
+        msg = "Aggregator must be a BaseAggregator."
+        raise TypeError(msg)
+
+    for index in indexs:
+        if not isinstance(index, MassiveSearchIndex):
+            msg = "Index must be a MassiveSearchIndex."
+            raise TypeError(msg)
+
+    search_return_type = indexs[0].search_engine.search.__annotations__["return"]
+    for index in indexs:
+        return_type = index.search_engine.search.__annotations__["return"]
+        if return_type is not search_return_type:
+            msg = (
+                f"Search return type of {index.name} is mismatched."
+                f" Found two different search return types:"
+                f" {return_type} and {search_return_type}."
+                f" Please check the indexs."
+            )
+            raise TypeError(msg)
+
+    aggregator_tasks_annotation = aggregator.aggregate.__annotations__["tasks"]
+    args = typing.get_args(aggregator_tasks_annotation)
+
+    if not issubclass(args[0], search_return_type):
+        msg = (
+            "Aggregator 'tasks' annotation does not match the search "
+            f"return type."
+            f" Expected {search_return_type}, got {args[0]}."
+            f" Please check the aggregator and indexs."
+        )
         raise TypeError(msg)

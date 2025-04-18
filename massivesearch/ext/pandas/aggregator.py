@@ -4,9 +4,11 @@ import asyncio
 
 import pandas as pd
 
-from massivesearch.aggregator import BaseAggregator, MassiveSearchTasks
+from massivesearch.aggregator import BaseAggregator
+from massivesearch.aggregator.base import MassiveSearchTasks
 from massivesearch.ext.pandas.types import (
     PandasAggregatorResult,
+    PandasSearchResultIndex,
 )
 
 
@@ -17,7 +19,7 @@ class PandasAggregator(BaseAggregator):
 
     async def aggregate(
         self,
-        tasks: MassiveSearchTasks,
+        tasks: MassiveSearchTasks[PandasSearchResultIndex],
     ) -> PandasAggregatorResult:
         """Aggregate the search results."""
         all_common_indices = await self._process_search_tasks(tasks)
@@ -34,7 +36,7 @@ class PandasAggregator(BaseAggregator):
 
     async def _process_search_tasks(
         self,
-        tasks: MassiveSearchTasks,
+        tasks: MassiveSearchTasks[PandasSearchResultIndex],
     ) -> list[pd.Index]:
         """Process search tasks and return common indices for each task."""
         all_common_indices: list[pd.Index] = []

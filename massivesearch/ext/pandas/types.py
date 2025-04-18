@@ -1,7 +1,5 @@
 """Types for pandas search engine."""
 
-from typing import Any
-
 import pandas as pd
 from pydantic import BaseModel
 

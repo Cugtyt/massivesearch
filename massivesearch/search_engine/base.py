@@ -11,17 +11,17 @@ class BaseSearchEngineArguments(BaseModel):
     """Arguments for search engines."""
 
 
-ArgT = TypeVar("ArgT", bound=BaseSearchEngineArguments)
+SearchArgT = TypeVar("SearchArgT", bound=BaseSearchEngineArguments)
 
 
 class BaseSearchResultIndex:
     """Base class for search results."""
 
 
-ResT = TypeVar("ResT", bound=BaseSearchResultIndex)
+SearchResT = TypeVar("SearchResT", bound=BaseSearchResultIndex)
 
 
-class BaseSearchEngine(GenericModel, Generic[ArgT, ResT]):
+class BaseSearchEngine(GenericModel, Generic[SearchArgT, SearchResT]):
     """Base class for search engines."""
 
     model_config = ConfigDict(extra="ignore")
@@ -29,6 +29,6 @@ class BaseSearchEngine(GenericModel, Generic[ArgT, ResT]):
     @abstractmethod
     async def search(
         self,
-        arguments: ArgT,
-    ) -> ResT:
+        arguments: SearchArgT,
+    ) -> SearchResT:
         """Search for the given arguments."""
