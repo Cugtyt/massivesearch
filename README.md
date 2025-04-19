@@ -25,7 +25,21 @@ title,description,author,price
 ...
 ```
 
-2. Define the search spec, example is in [examples/book/book_spec.yaml](examples/book/book_spec.yaml):
+2. Use MassiveSearchPipe to register related index, search engine, and aggregator, example in [examples/book/main.py](examples/book/main.py):
+
+``` python
+book_msp = MassiveSearchPipe[pd.DataFrame]()
+
+book_msp.register_index_type("text_index", BasicTextIndex)
+book_msp.register_index_type("number_index", BasicNumberIndex)
+book_msp.register_search_engine_type("book_text_search", PandasTextSearchEngine)
+book_msp.register_search_engine_type("book_price_search", PandasNumberSearchEngine)
+
+book_msp.register_aggregator_type("book_aggregator", PandasAggregator)
+book_msp.register_ai_client_type("azure_openai", AzureOpenAIClient)
+```
+
+3. Define the search spec, example is in [examples/book/book_spec.yaml](examples/book/book_spec.yaml):
 
 ``` yaml
 indexs:
@@ -53,20 +67,6 @@ aggregator:
 ai_client:
   type: azure_openai
   ...
-```
-
-3. Use MassiveSearchPipe to register related index, search engine, and aggregator, example in [examples/book/main.py](examples/book/main.py):
-
-``` python
-book_msp = MassiveSearchPipe[pd.DataFrame]()
-
-book_msp.register_index_type("text_index", BasicTextIndex)
-book_msp.register_index_type("number_index", BasicNumberIndex)
-book_msp.register_search_engine_type("book_text_search", PandasTextSearchEngine)
-book_msp.register_search_engine_type("book_price_search", PandasNumberSearchEngine)
-
-book_msp.register_aggregator_type("book_aggregator", PandasAggregator)
-book_msp.register_ai_client_type("azure_openai", AzureOpenAIClient)
 ```
 
 4. Load data, ai model and use Worker to search, example in [examples/book/main.py](examples/book/main.py):
