@@ -1,6 +1,3 @@
-from types import NoneType
-from typing import Any
-
 import pytest
 from pydantic import BaseModel, Field
 from pydantic.fields import FieldInfo
@@ -44,10 +41,10 @@ class ComplexArgs(BaseModel):
 
     name: str
     tags: list[str] = Field(description="List of tags.")
-    metadata: dict[str, NoneType] = Field(description="Arbitrary metadata.")
+    metadata: dict[str, None] = Field(description="Arbitrary metadata.")
     union_field: int | str = Field(description="Can be int or str.")
     optional_field: float | None = Field(None, description="An optional float.")
-    none_type_field: NoneType = Field(None, description="A field that is None.")
+    none_type_field: None = Field(None, description="A field that is None.")
 
 
 class EmptyArgs(BaseModel):
