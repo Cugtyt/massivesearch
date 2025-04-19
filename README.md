@@ -58,7 +58,7 @@ ai_client:
 3. Use SpecBuilder to register related index, search engine, and aggregator, example in [examples/book/main.py](examples/book/main.py):
 
 ``` python
-book_msp = MassiveSearchPipe()
+book_msp = MassiveSearchPipe[pd.DataFrame]()
 
 book_msp.register_index_type("text_index", BasicTextIndex)
 book_msp.register_index_type("number_index", BasicNumberIndex)
