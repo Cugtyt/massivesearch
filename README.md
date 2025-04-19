@@ -25,7 +25,7 @@ title,description,author,price
 ...
 ```
 
-2. Define the search spec, example in [examples/book/book_spec.yaml](examples/book/book_spec.yaml):
+2. Define the search spec, example is in [examples/book/book_spec.yaml](examples/book/book_spec.yaml):
 
 ``` yaml
 indexs:
@@ -55,7 +55,7 @@ ai_client:
   ...
 ```
 
-3. Use SpecBuilder to register related index, search engine, and aggregator, example in [examples/book/main.py](examples/book/main.py):
+3. Use MassiveSearchPipe to register related index, search engine, and aggregator, example in [examples/book/main.py](examples/book/main.py):
 
 ``` python
 book_msp = MassiveSearchPipe[pd.DataFrame]()
@@ -89,9 +89,9 @@ print("Books:")
 print(result)
 ```
 
-The queries is a list of dictionaries, each dictionary is a search query for each index.
+The queries are a list of dictionaries, each dictionary is a search query for each index.
 The relationship between the queries is OR, results from each query will be merged together.
-The relationship between the dictionary indexs is AND, all indexs must be satisfied.
+The relationship between the dictionary indices is AND, all indices must be satisfied.
 
 
 ``` json
