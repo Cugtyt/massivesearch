@@ -1,12 +1,12 @@
 """Boolean search engine for Pandas."""
 
-from typing import Self, cast
+from typing import Self
 
+import pandas as pd
 from pydantic import Field, model_validator
 
 from massivesearch.ext.pandas.types import (
     PandasBaseSearchEngineMixin,
-    PandasSearchResultIndex,
 )
 from massivesearch.search_engine import (
     BaseSearchEngineArguments,
@@ -45,14 +45,14 @@ class BoolSearchEngine(PandasBaseSearchEngineMixin, BaseSearchEngine):
     async def search(
         self,
         arguments: PandasBoolSearchEngineArguments,
-    ) -> PandasSearchResultIndex:
+    ) -> pd.Index:
         """Search for boolean values."""
         data = self.load_df()
         data_series = data[self.config.column_name]
         if arguments.select_true and arguments.select_false:
-            return cast("PandasSearchResultIndex", data.index)
+            return data.index
         if arguments.select_true:
-            return cast("PandasSearchResultIndex", data.index[data_series])
+            return data.index[data_series]
         if arguments.select_false:
-            return cast("PandasSearchResultIndex", data.index[~data_series])
-        return cast("PandasSearchResultIndex", data.index[False])
+            return data.index[~data_series]
+        return data.index[False]

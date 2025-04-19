@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from asyncio import Task
-from typing import Generic
+from typing import Generic, TypeVar
 
 from pydantic import ConfigDict
 from pydantic.generics import GenericModel
@@ -12,11 +12,10 @@ from massivesearch.search_engine.base import SearchResT
 type MassiveSearchTasks[T] = list[dict[str, Task[T]]]
 
 
-class BaseAggregatorResult:
-    """Aggregator result."""
+AggResT = TypeVar("AggResT")
 
 
-class BaseAggregator(GenericModel, Generic[SearchResT]):
+class BaseAggregator(GenericModel, Generic[SearchResT, AggResT]):
     """Aggregator class."""
 
     model_config = ConfigDict(extra="ignore")
@@ -25,5 +24,5 @@ class BaseAggregator(GenericModel, Generic[SearchResT]):
     async def aggregate(
         self,
         tasks: MassiveSearchTasks[SearchResT],
-    ) -> BaseAggregatorResult:
+    ) -> AggResT:
         """Aggregate the search results."""

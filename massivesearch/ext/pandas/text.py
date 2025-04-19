@@ -1,12 +1,12 @@
 """Text search engine for Pandas."""
 
-from typing import Literal, cast
+from typing import Literal
 
+import pandas as pd
 from pydantic import Field
 
 from massivesearch.ext.pandas.types import (
     PandasBaseSearchEngineMixin,
-    PandasSearchResultIndex,
 )
 from massivesearch.search_engine import BaseSearchEngineArguments
 from massivesearch.search_engine.base import BaseSearchEngine
@@ -28,7 +28,7 @@ class PandasTextSearchEngine(PandasBaseSearchEngineMixin, BaseSearchEngine):
     async def search(
         self,
         arguments: PandasTextSearchEngineArguments,
-    ) -> PandasSearchResultIndex:
+    ) -> pd.Index:
         """Search for text values."""
         data = self.load_df()
         data_series_lower = data[self.column_name].str.lower()
@@ -51,4 +51,4 @@ class PandasTextSearchEngine(PandasBaseSearchEngineMixin, BaseSearchEngine):
             case _:
                 msg = "Invalid matching strategy."
                 raise ValueError(msg)
-        return cast("PandasSearchResultIndex", indices)
+        return indices

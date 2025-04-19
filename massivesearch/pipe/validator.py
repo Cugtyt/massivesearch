@@ -12,7 +12,6 @@ from massivesearch.pipe.spec_index import MassiveSearchIndex
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
-    BaseSearchResultIndex,
 )
 
 
@@ -241,13 +240,6 @@ def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
     if cls.search.__annotations__.get("return") is None:
         msg = f"{cls.__name__} search method must have a return type."
         raise AttributeError(msg)
-    return_annotation = cls.search.__annotations__["return"]
-    if not issubclass(return_annotation, BaseSearchResultIndex):
-        msg = (
-            f"{cls.__name__} search method return type must be a "
-            f"subclass of BaseSearchResult."
-        )
-        raise TypeError(msg)
 
 
 def validate_aggregator(cls: type[BaseAggregator]) -> None:
@@ -273,12 +265,6 @@ def validate_aggregator(cls: type[BaseAggregator]) -> None:
         raise TypeError(msg)
 
     if args is None or len(args) != 1:
-        msg = (
-            f"{cls.__name__} aggregate 'tasks' annotation must be "
-            f"MassiveSearchTasks[BaseSearchResultIndex]."
-        )
-        raise TypeError(msg)
-    if not issubclass(args[0], BaseSearchResultIndex):
         msg = (
             f"{cls.__name__} aggregate 'tasks' annotation must be "
             f"MassiveSearchTasks[BaseSearchResultIndex]."
@@ -359,7 +345,7 @@ def validate_pipe_search_result_index(
     aggregator_tasks_annotation = aggregator.aggregate.__annotations__["tasks"]
     args = typing.get_args(aggregator_tasks_annotation)
 
-    if not issubclass(args[0], search_return_type):
+    if args[0] is not search_return_type:
         msg = (
             "Aggregator 'tasks' annotation does not match the search "
             f"return type."

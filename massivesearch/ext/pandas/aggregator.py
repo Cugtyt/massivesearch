@@ -6,10 +6,6 @@ import pandas as pd
 
 from massivesearch.aggregator import BaseAggregator
 from massivesearch.aggregator.base import MassiveSearchTasks
-from massivesearch.ext.pandas.types import (
-    PandasAggregatorResult,
-    PandasSearchResultIndex,
-)
 
 
 class PandasAggregator(BaseAggregator):
@@ -19,24 +15,24 @@ class PandasAggregator(BaseAggregator):
 
     async def aggregate(
         self,
-        tasks: MassiveSearchTasks[PandasSearchResultIndex],
-    ) -> PandasAggregatorResult:
+        tasks: MassiveSearchTasks[pd.Index],
+    ) -> pd.DataFrame:
         """Aggregate the search results."""
         all_common_indices = await self._process_search_tasks(tasks)
 
         book_df = pd.read_csv(self.file_path)
         if not all_common_indices:
-            return PandasAggregatorResult()
+            return pd.DataFrame()
 
         final_indices = self._merge_indices(all_common_indices)
 
         if not final_indices.empty:
-            return PandasAggregatorResult(book_df.loc[final_indices])
-        return PandasAggregatorResult()
+            return book_df.loc[final_indices]
+        return pd.DataFrame()
 
     async def _process_search_tasks(
         self,
-        tasks: MassiveSearchTasks[PandasSearchResultIndex],
+        tasks: MassiveSearchTasks[pd.Index],
     ) -> list[pd.Index]:
         """Process search tasks and return common indices for each task."""
         all_common_indices: list[pd.Index] = []

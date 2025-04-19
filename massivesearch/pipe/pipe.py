@@ -11,7 +11,6 @@ from pydantic import BaseModel, Field, ValidationError, create_model
 
 from massivesearch.aggregator.base import (
     BaseAggregator,
-    BaseAggregatorResult,
     MassiveSearchTasks,
 )
 from massivesearch.index.base import BaseIndex
@@ -410,7 +409,7 @@ class MassiveSearchPipe:
 
         return search_tasks
 
-    async def run(self, query: str) -> BaseAggregatorResult:
+    async def run(self, query: str) -> Any:  # noqa: ANN401
         """Execute the query and return the aggregated result."""
         if not self.aggregator:
             msg = "Aggregator is not set. Cannot run query."

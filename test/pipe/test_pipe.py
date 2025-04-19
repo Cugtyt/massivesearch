@@ -11,7 +11,6 @@ from pydantic import BaseModel, ConfigDict
 
 from massivesearch.aggregator.base import (
     BaseAggregator,
-    BaseAggregatorResult,
     MassiveSearchTasks,
 )
 from massivesearch.index.base import BaseIndex
@@ -21,7 +20,6 @@ from massivesearch.pipe.spec_index import MassiveSearchIndex
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
     BaseSearchEngineArguments,
-    BaseSearchResultIndex,
 )
 
 
@@ -34,7 +32,7 @@ class MockSearchEngineArgs(BaseSearchEngineArguments):
     param1: str
 
 
-class MockSearchResultIndex(BaseSearchResultIndex):
+class MockSearchResultIndex:
     def __init__(self, results: list[dict[str, Any]]):
         self.results = results
 
@@ -51,7 +49,7 @@ class MockSearchEngine(
         return MockSearchResultIndex(results=[{"id": "1", "score": 1.0}])
 
 
-class MockAggregatorResult(BaseAggregatorResult):
+class MockAggregatorResult:
     def __init__(self, result: str):
         self.result = result
 
@@ -307,7 +305,7 @@ def test_get_arguments_type_no_search_engine(pipe: MassiveSearchPipe) -> None:
 
 def test_get_arguments_type_no_arguments_param(pipe: MassiveSearchPipe) -> None:
     class NoArgsEngine(BaseSearchEngine):
-        async def search(self, other_param: str) -> BaseSearchResultIndex:  # type: ignore  # noqa: PGH003
+        async def search(self, other_param: str) -> None:  # type: ignore  # noqa: PGH003
             pass
 
     with pytest.raises(
@@ -319,7 +317,7 @@ def test_get_arguments_type_no_arguments_param(pipe: MassiveSearchPipe) -> None:
 
 def test_get_arguments_type_no_annotation(pipe: MassiveSearchPipe) -> None:
     class NoAnnotationEngine(BaseSearchEngine):
-        async def search(self, arguments) -> BaseSearchResultIndex:  # type: ignore  # noqa: ANN001, PGH003
+        async def search(self, arguments) -> None:  # type: ignore  # noqa: ANN001, PGH003
             pass  # No type hint
 
     with pytest.raises(

@@ -14,11 +14,7 @@ class BaseSearchEngineArguments(BaseModel):
 SearchArgT = TypeVar("SearchArgT", bound=BaseSearchEngineArguments)
 
 
-class BaseSearchResultIndex:
-    """Base class for search results."""
-
-
-SearchResT = TypeVar("SearchResT", bound=BaseSearchResultIndex)
+SearchResT = TypeVar("SearchResT")
 
 
 class BaseSearchEngine(GenericModel, Generic[SearchArgT, SearchResT]):

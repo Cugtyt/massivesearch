@@ -1,12 +1,12 @@
 """Number search engine for Pandas."""
 
-from typing import Self, cast
+from typing import Self
 
+import pandas as pd
 from pydantic import BaseModel, Field, model_validator
 
 from massivesearch.ext.pandas.types import (
     PandasBaseSearchEngineMixin,
-    PandasSearchResultIndex,
 )
 from massivesearch.search_engine import (
     BaseSearchEngineArguments,
@@ -54,12 +54,12 @@ class PandasNumberSearchEngine(PandasBaseSearchEngineMixin, BaseSearchEngine):
     async def search(
         self,
         arguments: PandasNumberSearchEngineArguments,
-    ) -> PandasSearchResultIndex:
+    ) -> pd.Index:
         """Search for numbers."""
         data = self.load_df()
 
         if len(arguments.number_ranges) == 0:
-            return cast("PandasSearchResultIndex", data.index)
+            return data.index
 
         data_series = data[self.column_name]
         masks = []
@@ -80,8 +80,8 @@ class PandasNumberSearchEngine(PandasBaseSearchEngineMixin, BaseSearchEngine):
             masks.append(current_mask)
 
         if not masks:
-            return cast("PandasSearchResultIndex", data.index)
+            return data.index
         combined_mask = masks[0]
         for mask in masks[1:]:
             combined_mask |= mask
-        return cast("PandasSearchResultIndex", data.index[combined_mask])
+        return data.index[combined_mask]
