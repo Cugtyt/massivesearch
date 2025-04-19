@@ -3,16 +3,15 @@
 from typing import Literal
 
 import pandas as pd
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from massivesearch.ext.pandas.types import (
     PandasBaseSearchEngineMixin,
 )
-from massivesearch.search_engine import BaseSearchEngineArguments
 from massivesearch.search_engine.base import BaseSearchEngine
 
 
-class PandasTextSearchEngineArguments(BaseSearchEngineArguments):
+class PandasTextSearchEngineArguments(BaseModel):
     """Arguments for text search engines."""
 
     keywords: list[str] = Field(

@@ -3,18 +3,15 @@
 from typing import Self
 
 import pandas as pd
-from pydantic import Field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from massivesearch.ext.pandas.types import (
     PandasBaseSearchEngineMixin,
 )
-from massivesearch.search_engine import (
-    BaseSearchEngineArguments,
-)
 from massivesearch.search_engine.base import BaseSearchEngine
 
 
-class PandasBoolSearchEngineArguments(BaseSearchEngineArguments):
+class PandasBoolSearchEngineArguments(BaseModel):
     """Arguments for boolean search engines.
 
     If both `select_true` and `select_false` are set to true,
@@ -48,7 +45,7 @@ class BoolSearchEngine(PandasBaseSearchEngineMixin, BaseSearchEngine):
     ) -> pd.Index:
         """Search for boolean values."""
         data = self.load_df()
-        data_series = data[self.config.column_name]
+        data_series = data[self.column_name]
         if arguments.select_true and arguments.select_false:
             return data.index
         if arguments.select_true:

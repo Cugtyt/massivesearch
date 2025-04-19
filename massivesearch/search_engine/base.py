@@ -4,20 +4,14 @@ from abc import abstractmethod
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict
-from pydantic.generics import GenericModel
 
-
-class BaseSearchEngineArguments(BaseModel):
-    """Arguments for search engines."""
-
-
-SearchArgT = TypeVar("SearchArgT", bound=BaseSearchEngineArguments)
+SearchArgT = TypeVar("SearchArgT", bound=BaseModel)
 
 
 SearchResT = TypeVar("SearchResT")
 
 
-class BaseSearchEngine(GenericModel, Generic[SearchArgT, SearchResT]):
+class BaseSearchEngine(BaseModel, Generic[SearchArgT, SearchResT]):
     """Base class for search engines."""
 
     model_config = ConfigDict(extra="ignore")

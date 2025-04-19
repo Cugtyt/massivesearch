@@ -2,6 +2,8 @@
 
 import logging
 
+import pandas as pd
+
 from massivesearch.ext.pandas.aggregator import PandasAggregator
 from massivesearch.ext.pandas.number import PandasNumberSearchEngine
 from massivesearch.ext.pandas.text import PandasTextSearchEngine
@@ -14,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-book_msp = MassiveSearchPipe()
+book_msp = MassiveSearchPipe[pd.DataFrame]()
 
 
 @book_msp.index_type("text_index")

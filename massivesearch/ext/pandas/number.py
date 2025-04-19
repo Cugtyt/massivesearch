@@ -8,9 +8,6 @@ from pydantic import BaseModel, Field, model_validator
 from massivesearch.ext.pandas.types import (
     PandasBaseSearchEngineMixin,
 )
-from massivesearch.search_engine import (
-    BaseSearchEngineArguments,
-)
 from massivesearch.search_engine.base import BaseSearchEngine
 
 
@@ -40,7 +37,7 @@ class NumberRange(BaseModel):
         return self
 
 
-class PandasNumberSearchEngineArguments(BaseSearchEngineArguments):
+class PandasNumberSearchEngineArguments(BaseModel):
     """Arguments for number search engine."""
 
     number_ranges: list[NumberRange] = Field(

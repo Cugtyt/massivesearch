@@ -3,16 +3,13 @@
 import inspect
 import typing
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from massivesearch.aggregator.base import BaseAggregator, MassiveSearchTasks
 from massivesearch.index.base import BaseIndex
 from massivesearch.model.base import BaseAIClient
 from massivesearch.pipe.spec_index import MassiveSearchIndex
-from massivesearch.search_engine.base import (
-    BaseSearchEngine,
-    BaseSearchEngineArguments,
-)
+from massivesearch.search_engine.base import BaseSearchEngine
 
 
 class SpecSchemaError(Exception):
@@ -231,11 +228,8 @@ def validate_search_engine(cls: type[BaseSearchEngine]) -> None:
         raise TypeError(msg)
 
     arguments_annotation = cls.search.__annotations__["arguments"]
-    if not issubclass(arguments_annotation, BaseSearchEngineArguments):
-        msg = (
-            f"{cls.__name__} search method arguments must be a "
-            f"subclass of BaseSearchEngineArguments."
-        )
+    if not issubclass(arguments_annotation, BaseModel):
+        msg = f"{cls.__name__} search method arguments must be a subclass of BaseModel."
         raise TypeError(msg)
     if cls.search.__annotations__.get("return") is None:
         msg = f"{cls.__name__} search method must have a return type."
@@ -316,6 +310,7 @@ def validate_ai_client(cls: type[BaseAIClient]) -> None:
 def validate_pipe_search_result_index(
     indexs: list[MassiveSearchIndex],
     aggregator: BaseAggregator,
+    pipe_return_type: type,
 ) -> None:
     """Validate the search result index."""
     if not isinstance(indexs, list):
@@ -351,5 +346,18 @@ def validate_pipe_search_result_index(
             f"return type."
             f" Expected {search_return_type}, got {args[0]}."
             f" Please check the aggregator and indexs."
+        )
+        raise TypeError(msg)
+
+    aggregator_sig = inspect.signature(aggregator.aggregate)
+    aggregator_return_type = aggregator_sig.return_annotation
+    if typing.get_origin(aggregator_return_type) is typing.Awaitable:
+        aggregator_return_type = typing.get_args(aggregator_return_type)[0]
+
+    if aggregator_return_type is not pipe_return_type:
+        msg = (
+            "Aggregator return type does not match the pipe return type."
+            f" Expected {pipe_return_type}, got {aggregator_return_type}."
+            f" Please check the aggregator and pipe return type."
         )
         raise TypeError(msg)

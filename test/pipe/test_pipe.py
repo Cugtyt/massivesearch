@@ -19,7 +19,6 @@ from massivesearch.pipe.pipe import MassiveSearchPipe
 from massivesearch.pipe.spec_index import MassiveSearchIndex
 from massivesearch.search_engine.base import (
     BaseSearchEngine,
-    BaseSearchEngineArguments,
 )
 
 
@@ -28,7 +27,7 @@ class MockIndex(BaseIndex):
         return "Mock Index Prompt"
 
 
-class MockSearchEngineArgs(BaseSearchEngineArguments):
+class MockSearchEngineArgs(BaseModel):
     param1: str
 
 
@@ -81,7 +80,7 @@ class MockAIClient(BaseAIClient):
 @pytest.fixture
 def pipe() -> MassiveSearchPipe:
     """Fixture for MassiveSearchPipe instance."""
-    return MassiveSearchPipe()
+    return MassiveSearchPipe[MockAggregatorResult]()
 
 
 @pytest.fixture
@@ -322,7 +321,7 @@ def test_get_arguments_type_no_annotation(pipe: MassiveSearchPipe) -> None:
 
     with pytest.raises(
         TypeError,
-        match="'arguments' parameter is not a subclass of BaseSearchEngineArguments",
+        match="'arguments' parameter is not a subclass of BaseModel.",
     ):
         pipe._get_arguments_type(NoAnnotationEngine())
 

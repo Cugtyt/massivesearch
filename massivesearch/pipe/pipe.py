@@ -1,10 +1,9 @@
 """Pipe."""
 
 import asyncio
-from collections.abc import Callable
-from inspect import signature
+import typing
 from pathlib import Path
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 import yaml
 from pydantic import BaseModel, Field, ValidationError, create_model
@@ -13,40 +12,34 @@ from massivesearch.aggregator.base import (
     BaseAggregator,
     MassiveSearchTasks,
 )
-from massivesearch.index.base import BaseIndex
 from massivesearch.model.base import BaseAIClient
 from massivesearch.pipe.prompt import PIPE_STSTEM_PROMPT_TEMPLATE
+from massivesearch.pipe.registry import MassiveSearchRegistry
 from massivesearch.pipe.spec_index import MassiveSearchIndex
 from massivesearch.pipe.validator import (
-    validate_aggregator,
-    validate_ai_client,
     validate_pipe_search_result_index,
-    validate_search_engine,
     validate_spec,
 )
-from massivesearch.search_engine.base import (
-    BaseSearchEngine,
-    BaseSearchEngineArguments,
-)
+
+MassiveSearchResT = TypeVar("MassiveSearchResT")
 
 
-class MassiveSearchPipe:
+class MassiveSearchPipe(MassiveSearchRegistry, Generic[MassiveSearchResT]):
     """Massive Search Pipe."""
 
     def __init__(self, *, prompt_template: str | None = None) -> None:
         """Initialize the Massive Search Pipe."""
+        super().__init__()
+
         self.indexs: list[MassiveSearchIndex] = []
         self.aggregator: BaseAggregator | None = None
         self.ai_client: BaseAIClient | None = None
 
-        self.registered_index_types: dict[str, type[BaseIndex]] = {}
-        self.registered_search_engine_types: dict[str, type[BaseSearchEngine]] = {}
-        self.registered_aggregator_types: dict[str, type[BaseAggregator]] = {}
-        self.registered_ai_client_types: dict[str, type[BaseAIClient]] = {}
-
         if prompt_template and "{context}" not in prompt_template:
-            msg = "Prompt template must contain '{context}' placeholder."
-            raise ValueError(msg)
+            missing_result_type_msg = (
+                "Prompt template must contain '{context}' placeholder."
+            )
+            raise ValueError(missing_result_type_msg)
         self.prompt_template = prompt_template or PIPE_STSTEM_PROMPT_TEMPLATE
 
         self.prompt: str = ""
@@ -74,6 +67,17 @@ class MassiveSearchPipe:
 
     def build(self, spec: dict) -> None:
         """Build the spec."""
+        orig_class = getattr(self, "__orig_class__", None)
+        missing_result_type_msg = (
+            "MassiveSearchPipe must be parameterized with a result type, e.g. "
+            "`MassiveSearchPipe[MyResultType]`."
+        )
+        if not orig_class:
+            raise ValueError(missing_result_type_msg)
+        pipe_generic_args = typing.get_args(orig_class)
+        if not pipe_generic_args or isinstance(pipe_generic_args[0], TypeVar):
+            raise ValueError(missing_result_type_msg)
+
         if not spec:
             msg = "No schemas available to build."
             raise ValueError(msg)
@@ -119,7 +123,9 @@ class MassiveSearchPipe:
             **ai_client_spec,
         )
 
-        validate_pipe_search_result_index(self.indexs, self.aggregator)
+        pipe_res_type = typing.get_args(getattr(self, "__orig_class__", None))[0]
+
+        validate_pipe_search_result_index(self.indexs, self.aggregator, pipe_res_type)
 
         self._build_prompt()
         self._build_format_model()
@@ -141,9 +147,7 @@ class MassiveSearchPipe:
 
         fields: dict[str, Any] = {"sub_query": (str, ...)}
         for index in self.indexs:
-            arg_type: type[BaseSearchEngineArguments] = (
-                index.search_engine_arguments_type
-            )
+            arg_type: type[BaseModel] = index.search_engine_arguments_type
             fields[index.name] = (arg_type, ...)
 
         SingleQueryFormat: type[BaseModel] = create_model(  # noqa: N806
@@ -158,141 +162,39 @@ class MassiveSearchPipe:
             __base__=BaseModel,
         )
 
-    def _get_arguments_type(
+    def __or__(
         self,
-        search_engine: BaseSearchEngine,
-    ) -> type[BaseSearchEngineArguments]:
-        """Get the arguments type for the search engine."""
-        if not search_engine:
-            msg = "No search engine available to get arguments type."
-            raise ValueError(msg)
-
-        search_function = type(search_engine).search
-        search_parameters = signature(search_function).parameters
-        if "arguments" not in search_parameters:
-            msg = "'arguments' parameter not found in search function."
-            raise ValueError(msg)
-        if not issubclass(
-            search_parameters["arguments"].annotation,
-            BaseSearchEngineArguments,
-        ):
-            msg = (
-                "'arguments' parameter is not a subclass of BaseSearchEngineArguments."
-            )
-            raise TypeError(msg)
-
-        return search_parameters["arguments"].annotation
-
-    def _register_types(
-        self,
-        component_type_name: str,
-        registry: dict[str, type],
-        base_class: type,
-        name: str,
-        cls: type,
-    ) -> None:
-        """Register a component type with validation."""
-        if not name:
-            msg = "Name is required."
-            raise ValueError(msg)
-
-        if not issubclass(cls, base_class):
-            msg = f"Class '{cls.__name__}' is not a subclass of {base_class.__name__}."
-            raise TypeError(msg)
-
-        if name in registry:
-            msg = f"{component_type_name} with name '{name}' is already registered."
-            raise ValueError(msg)
-        registry[name] = cls
-
-    def index_type(self, name: str) -> Callable[[type[BaseIndex]], type[BaseIndex]]:
-        """Return a decorator to register an index type with a given key name."""
-        return lambda cls: self.register_index_type(name, cls)
-
-    def register_index_type(self, name: str, cls: type[BaseIndex]) -> type[BaseIndex]:
-        """Register an index type with a given key name."""
-        self._register_types(
-            "Index",
-            self.registered_index_types,
-            BaseIndex,
-            name,
-            cls,
-        )
-        return cls
-
-    def search_engine_type(
-        self,
-        name: str,
-    ) -> Callable[[type[BaseSearchEngine]], type[BaseSearchEngine]]:
-        """Return a decorator to register a search engine type with a given key name."""
-        return lambda cls: self.register_search_engine_type(name, cls)
-
-    def register_search_engine_type(
-        self,
-        name: str,
-        cls: type[BaseSearchEngine],
-    ) -> type[BaseSearchEngine]:
-        """Register a search engine type with a given key name."""
-        validate_search_engine(cls)
-        self._register_types(
-            "Search engine",
-            self.registered_search_engine_types,
-            BaseSearchEngine,
-            name,
-            cls,
-        )
-        return cls
-
-    def aggregator_type(
-        self,
-        name: str,
-    ) -> Callable[[type[BaseAggregator]], type[BaseAggregator]]:
-        """Return a decorator to register an aggregator type with a given key name."""
-        return lambda cls: self.register_aggregator_type(name, cls)
-
-    def register_aggregator_type(
-        self,
-        name: str,
-        cls: type[BaseAggregator],
-    ) -> type[BaseAggregator]:
-        """Register an aggregator type with a given key name."""
-        validate_aggregator(cls)
-        self._register_types(
-            "Aggregator",
-            self.registered_aggregator_types,
-            BaseAggregator,
-            name,
-            cls,
-        )
-        return cls
-
-    def ai_client_type(
-        self,
-        name: str,
-    ) -> Callable[[type[BaseAIClient]], type[BaseAIClient]]:
-        """Return a decorator to register an AI client type with a given key name."""
-        return lambda cls: self.register_ai_client_type(name, cls)
-
-    def register_ai_client_type(
-        self,
-        name: str,
-        cls: type[BaseAIClient],
-    ) -> type[BaseAIClient]:
-        """Register an AI client type with a given key name."""
-        validate_ai_client(cls)
-        self._register_types(
-            "AI client",
-            self.registered_ai_client_types,
-            BaseAIClient,
-            name,
-            cls,
-        )
-        return cls
-
-    def __or__(self, other: "MassiveSearchPipe") -> "MassiveSearchPipe":
+        other: "MassiveSearchPipe[MassiveSearchResT]",
+    ) -> "MassiveSearchPipe[MassiveSearchResT]":
         """Combine two MassiveSearchPipe instances."""
         if not isinstance(other, MassiveSearchPipe):
             msg = "Can only combine with another MassiveSearchPipe instance."
+            raise TypeError(msg)
+
+        self_args = typing.get_args(getattr(self, "__orig_class__", None))
+        other_args = typing.get_args(getattr(other, "__orig_class__", None))
+
+        self_res_type = (
+            self_args[0]
+            if self_args and not isinstance(self_args[0], TypeVar)
+            else None
+        )
+        other_res_type = (
+            other_args[0]
+            if other_args and not isinstance(other_args[0], TypeVar)
+            else None
+        )
+
+        if (
+            self_res_type is not None
+            and other_res_type is not None
+            and self_res_type != other_res_type
+        ):
+            msg = (
+                "Cannot combine MassiveSearchPipe instances parameterized with "
+                f"different concrete result types ({self_res_type.__name__} vs "
+                f"{other_res_type.__name__})."
+            )
             raise TypeError(msg)
 
         if self.aggregator or other.aggregator:
@@ -331,7 +233,7 @@ class MassiveSearchPipe:
                 )
                 raise ValueError(msg)
 
-        combined = MassiveSearchPipe()
+        combined = MassiveSearchPipe[MassiveSearchResT]()
         combined.registered_index_types = {
             **self.registered_index_types,
             **other.registered_index_types,
@@ -409,7 +311,7 @@ class MassiveSearchPipe:
 
         return search_tasks
 
-    async def run(self, query: str) -> Any:  # noqa: ANN401
+    async def run(self, query: str) -> MassiveSearchResT:
         """Execute the query and return the aggregated result."""
         if not self.aggregator:
             msg = "Aggregator is not set. Cannot run query."
