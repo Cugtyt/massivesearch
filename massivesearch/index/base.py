@@ -13,11 +13,10 @@ class BaseIndex(BaseModel, ABC):
     description: str
     examples: list
 
-    def prompt(self, index_name: str) -> str:
+    def prompt(self) -> str:
         """Return the prompt for the index schema."""
         return "\n".join(
             [
-                f"Index Name: {index_name}",
                 f"Description: {self.description}",
                 f"Examples: {self.examples}" if self.examples else "",
             ],

@@ -37,7 +37,7 @@ class MassiveSearchPipe(MassiveSearchRegistry, Generic[MassiveSearchResT]):
         self.aggregator: BaseAggregator | None = None
         self.ai_client: BaseAIClient | None = None
 
-        if prompt_template and "{context}" not in prompt_template:
+        if prompt_template and "{index_context}" not in prompt_template:
             missing_result_type_msg = (
                 "Prompt template must contain '{context}' placeholder."
             )
@@ -138,8 +138,8 @@ class MassiveSearchPipe(MassiveSearchRegistry, Generic[MassiveSearchResT]):
             msg = "Spec is not fully built. Cannot build prompt."
             raise ValueError(msg)
 
-        context = "\n".join(index.prompt() for index in self.indexs)
-        self.prompt = self.prompt_template.format(context=context)
+        index_context = "\n".join([index.prompt() for index in self.indexs])
+        self.prompt = self.prompt_template.format(index_context=index_context)
 
     def _build_format_model(self) -> None:
         """Build the format model for the spec."""

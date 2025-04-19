@@ -45,5 +45,5 @@ different aspects of the user's intent while maintaining logical clarity.
 
 The following is the index information:
 
-{context}
+{index_context}
 """

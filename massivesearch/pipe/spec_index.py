@@ -16,4 +16,8 @@ class MassiveSearchIndex(BaseModel):
 
     def prompt(self) -> str:
         """Get the prompt message."""
-        return self.index.prompt(self.name)
+        return (
+            f"Index Name: {self.name}\n"
+            f"{self.index.prompt()}\n"
+            f"{self.search_engine.prompt()}\n"
+        )

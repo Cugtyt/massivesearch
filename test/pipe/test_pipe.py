@@ -23,8 +23,7 @@ from massivesearch.search_engine.base import (
 
 
 class MockIndex(BaseIndex):
-    def prompt(self, index_name: str) -> str:
-        return "Mock Index Prompt"
+    """Mock index for testing."""
 
 
 class MockSearchEngineArgs(BaseModel):
@@ -134,14 +133,14 @@ def test_pipe_init_default(pipe: MassiveSearchPipe) -> None:
     assert pipe.registered_search_engine_types == {}
     assert pipe.registered_aggregator_types == {}
     assert pipe.registered_ai_client_types == {}
-    assert "{context}" in pipe.prompt_template
+    assert "{index_context}" in pipe.prompt_template
     assert pipe.prompt == ""
     assert pipe.format_model is None
     assert pipe.serach_query == []
 
 
 def test_pipe_init_custom_prompt() -> None:
-    template = "Custom template with {context}"
+    template = "Custom template with {index_context}"
     pipe = MassiveSearchPipe[None](prompt_template=template)
     assert pipe.prompt_template == template
 
@@ -250,14 +249,11 @@ def test_build_validation_error(
         mock_validator.assert_called_once()
 
 
-# --- Test _build_prompt ---
-
-
 def test_build_prompt_success(built_pipe: MassiveSearchPipe) -> None:
     # build() calls _build_prompt, so we check the result on a built pipe
     assert built_pipe.prompt != ""
-    assert "{context}" not in built_pipe.prompt  # Placeholder should be replaced
-    assert "Mock Index Prompt" in built_pipe.prompt  # Content from mock index
+    assert "{index_context}" not in built_pipe.prompt  # Placeholder should be replaced
+    assert "mock_index" in built_pipe.prompt  # Content from mock index
 
 
 def test_build_prompt_not_built(pipe: MassiveSearchPipe) -> None:

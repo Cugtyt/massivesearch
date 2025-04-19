@@ -18,11 +18,10 @@ class BasicNumberIndex(BaseIndex):
     range: NumberRange
     examples: list[float]
 
-    def prompt(self, index_name: str) -> str:
+    def prompt(self) -> str:
         """Return the prompt for the index schema."""
         return "\n".join(
             [
-                f"Index Name: {index_name}",
                 f"Description: {self.description}",
                 f"Range: {self.range.min} to {self.range.max}",
                 f"Examples: {self.examples}",
