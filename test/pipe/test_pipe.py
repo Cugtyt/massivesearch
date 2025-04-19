@@ -142,7 +142,7 @@ def test_pipe_init_default(pipe: MassiveSearchPipe) -> None:
 
 def test_pipe_init_custom_prompt() -> None:
     template = "Custom template with {context}"
-    pipe = MassiveSearchPipe(prompt_template=template)
+    pipe = MassiveSearchPipe[None](prompt_template=template)
     assert pipe.prompt_template == template
 
 
@@ -405,8 +405,8 @@ def test_register_type_duplicate_name(pipe: MassiveSearchPipe) -> None:
 
 
 def test_or_success() -> None:
-    pipe1 = MassiveSearchPipe()
-    pipe2 = MassiveSearchPipe()
+    pipe1 = MassiveSearchPipe[None]()
+    pipe2 = MassiveSearchPipe[None]()
 
     class Index1(MockIndex):
         pass
@@ -437,7 +437,7 @@ def test_or_success() -> None:
 
 
 def test_or_type_error() -> None:
-    pipe1 = MassiveSearchPipe()
+    pipe1 = MassiveSearchPipe[None]()
     with pytest.raises(
         TypeError,
         match="Can only combine with another MassiveSearchPipe instance.",
@@ -446,8 +446,8 @@ def test_or_type_error() -> None:
 
 
 def test_or_aggregator_set() -> None:
-    pipe1 = MassiveSearchPipe()
-    pipe2 = MassiveSearchPipe()
+    pipe1 = MassiveSearchPipe[None]()
+    pipe2 = MassiveSearchPipe[None]()
     pipe1.aggregator = MockAggregator()  # Set aggregator on pipe1
     with pytest.raises(ValueError, match="Aggregator already set"):
         _ = pipe1 | pipe2
@@ -459,8 +459,8 @@ def test_or_aggregator_set() -> None:
 
 
 def test_or_ai_client_set() -> None:
-    pipe1 = MassiveSearchPipe()
-    pipe2 = MassiveSearchPipe()
+    pipe1 = MassiveSearchPipe[None]()
+    pipe2 = MassiveSearchPipe[None]()
     pipe1.ai_client = MockAIClient()  # Set AI client on pipe1
     with pytest.raises(ValueError, match="AI client already set"):
         _ = pipe1 | pipe2
@@ -472,8 +472,8 @@ def test_or_ai_client_set() -> None:
 
 
 def test_or_type_overlap() -> None:
-    pipe1 = MassiveSearchPipe()
-    pipe2 = MassiveSearchPipe()
+    pipe1 = MassiveSearchPipe[None]()
+    pipe2 = MassiveSearchPipe[None]()
     pipe1.register_index_type("overlap_index", MockIndex)
     pipe2.register_index_type("overlap_index", MockIndex)  # Same name
     with pytest.raises(ValueError, match="Index types overlap: {'overlap_index'}"):

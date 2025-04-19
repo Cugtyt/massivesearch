@@ -12,7 +12,6 @@ from massivesearch.aggregator.base import (
     BaseAggregator,
     MassiveSearchTasks,
 )
-from massivesearch.model.base import BaseAIClient
 from massivesearch.pipe.prompt import PIPE_STSTEM_PROMPT_TEMPLATE
 from massivesearch.pipe.registry import MassiveSearchRegistry
 from massivesearch.pipe.spec_index import MassiveSearchIndex
@@ -20,6 +19,9 @@ from massivesearch.pipe.validator import (
     validate_pipe_search_result_index,
     validate_spec,
 )
+
+if typing.TYPE_CHECKING:
+    from massivesearch.model.base import BaseAIClient
 
 MassiveSearchResT = TypeVar("MassiveSearchResT")
 
